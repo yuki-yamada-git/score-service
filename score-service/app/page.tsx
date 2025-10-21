@@ -22,6 +22,15 @@ export default function Home() {
         <footer className="mt-auto text-center text-xs text-slate-500 sm:text-left">
           入力した情報はこのページ内でのみ保持され、外部へ送信されません。
         </footer>
+
+        <div className="flex justify-center sm:justify-end">
+          <button
+            type="button"
+            className="rounded-lg bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            分析開始
+          </button>
+        </div>
       </div>
     </div>
   );
