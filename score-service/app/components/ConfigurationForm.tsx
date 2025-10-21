@@ -2,146 +2,50 @@
 
 import { useMemo, useState } from "react";
 
-type FieldId =
-  | "backlogProjectId"
-  | "designDocumentId"
-  | "requirementsDocumentId"
-  | "backlogApiKey"
-  | "openAiApiKey";
-
-type FieldDefinition = {
-  id: FieldId;
-  label: string;
-  placeholder?: string;
-  description?: string;
-  type?: "text" | "password";
-  autoComplete?: string;
-};
-
-type PreviewState = {
-  backlog: {
-    projectId?: string;
-    designDocumentId?: string;
-    requirementsDocumentId?: string;
-    apiKey?: string;
-  };
-  openAi: {
-    apiKey?: string;
-  };
-};
-
-const FIELD_DEFINITIONS: FieldDefinition[] = [
-  {
-    id: "backlogProjectId",
-    label: "Backlog の Project ID",
-    placeholder: "例: 123456",
-    description: "Backlog で対象プロジェクトを一意に識別する ID を入力します。",
-  },
-  {
-    id: "designDocumentId",
-    label: "設計書の ID",
-    placeholder: "例: 987654321",
-    description: "Backlog 上の設計書ページの ID を入力してください。",
-  },
-  {
-    id: "requirementsDocumentId",
-    label: "要件定義書の ID",
-    placeholder: "例: 192837465",
-    description: "Backlog 上の要件定義書ページの ID を入力してください。",
-  },
-  {
-    id: "backlogApiKey",
-    label: "Backlog API Key",
-    placeholder: "例: abcdef1234567890",
-    description: "Backlog の個人設定から発行できる API キーです。",
-    type: "password",
-    autoComplete: "off",
-  },
-  {
-    id: "openAiApiKey",
-    label: "OpenAI API Key",
-    placeholder: "例: sk-...",
-    description: "OpenAI の管理画面から取得した API キーを入力してください。",
-    type: "password",
-    autoComplete: "off",
-  },
-];
-
-const INITIAL_VALUES = FIELD_DEFINITIONS.reduce(
-  (values, field) => {
-    values[field.id] = "";
-    return values;
-  },
-  {} as Record<FieldId, string>,
-);
+import {
+  FIELD_DEFINITIONS,
+  INITIAL_VALUES,
+  type ConfigurationFieldId,
+  type PreviewState,
+  buildPreview,
+} from "@/app/lib/configuration-form";
+import { copyTextToClipboard } from "@/app/lib/copy-to-clipboard";
 
 export function ConfigurationForm() {
-  const [values, setValues] = useState<Record<FieldId, string>>(INITIAL_VALUES);
+  const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
+    ...INITIAL_VALUES,
+  });
   const [hasCopied, setHasCopied] = useState(false);
 
-  const preview = useMemo<PreviewState>(() => {
-    const backlog: PreviewState["backlog"] = {};
-    const openAi: PreviewState["openAi"] = {};
+  // フォームで管理している値からプレビュー用の JSON を生成する。
+  const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
 
-    if (values.backlogProjectId) {
-      backlog.projectId = values.backlogProjectId;
-    }
-
-    if (values.designDocumentId) {
-      backlog.designDocumentId = values.designDocumentId;
-    }
-
-    if (values.requirementsDocumentId) {
-      backlog.requirementsDocumentId = values.requirementsDocumentId;
-    }
-
-    if (values.backlogApiKey) {
-      backlog.apiKey = values.backlogApiKey;
-    }
-
-    if (values.openAiApiKey) {
-      openAi.apiKey = values.openAiApiKey;
-    }
-
-    return { backlog, openAi };
-  }, [values]);
-
-  const handleChange = (fieldId: FieldId, nextValue: string) => {
+  // 各入力フィールドの変更を受け取り、対応する値を更新する。
+  const handleChange = (fieldId: ConfigurationFieldId, nextValue: string) => {
     setValues((current) => ({
       ...current,
       [fieldId]: nextValue,
     }));
   };
 
+  // 入力値とコピー状態を初期化する。
   const handleReset = () => {
-    setValues(INITIAL_VALUES);
+    setValues({ ...INITIAL_VALUES });
     setHasCopied(false);
   };
 
   const handleCopy = async () => {
+    // プレビュー内容をテキスト化し、クリップボードへのコピー結果を表示に反映する。
     const text = JSON.stringify(preview, null, 2);
+    const copied = await copyTextToClipboard(text);
 
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "true");
-        textarea.style.position = "absolute";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-
+    if (copied) {
       setHasCopied(true);
       setTimeout(() => setHasCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy configuration", error);
-      setHasCopied(false);
+      return;
     }
+
+    setHasCopied(false);
   };
 
   return (
