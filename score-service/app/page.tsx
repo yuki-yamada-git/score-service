@@ -1,15 +1,28 @@
-import { CtaButtons } from "./components/CtaButtons";
-import { FooterLinks } from "./components/FooterLinks";
-import { HeroSection } from "./components/HeroSection";
+import { ConfigurationForm } from "./components/ConfigurationForm";
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <HeroSection />
-        <CtaButtons />
-      </main>
-      <FooterLinks />
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-12 px-6 py-12 lg:px-12">
+        <header className="space-y-4 text-center sm:text-left">
+          <p className="text-xs font-semibold uppercase tracking-[0.4em] text-sky-400">
+            Score Service
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">
+            連携設定のセットアップ
+          </h1>
+          <p className="mx-auto max-w-2xl text-base text-slate-300 sm:mx-0">
+            Backlog と OpenAI を接続するために必要な情報を入力してください。今は保存や通信は行われませんが、入力内容を JSON
+            としてコピーできるので、実装が揃ったときにそのまま利用できます。
+          </p>
+        </header>
+
+        <ConfigurationForm />
+
+        <footer className="mt-auto text-center text-xs text-slate-500 sm:text-left">
+          入力した情報はこのページ内でのみ保持され、外部へ送信されません。
+        </footer>
+      </div>
     </div>
   );
 }
