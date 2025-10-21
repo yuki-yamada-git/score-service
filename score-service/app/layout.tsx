@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "geist/font";
 import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+});
 
 export const metadata: Metadata = {
   title: "Score Service | 連携設定",
@@ -14,7 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className="bg-slate-950 text-slate-100 antialiased">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} bg-slate-950 text-slate-100 antialiased`}
+      >
         {children}
       </body>
     </html>
