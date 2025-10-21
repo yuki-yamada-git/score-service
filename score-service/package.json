@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:build && npm run test:run",
-    "test:build": "tsc --project tsconfig.test.json",
+    "test:build": "node -e \"require('fs').rmSync('.test-dist',{recursive:true,force:true})\" && tsc --project tsconfig.test.json",
     "test:run": "node --test $(find .test-dist/tests -name '*.test.js')"
   },
   "dependencies": {
