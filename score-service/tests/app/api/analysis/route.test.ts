@@ -55,9 +55,9 @@ describe("POST /api/analysis", () => {
       createRequest({
         backlog: {
           baseUrl: "https://example.backlog.com",
-          projectId: "42",
-          designDocumentId: "101",
-          requirementsDocumentId: "202",
+          projectId: "PRJ-42",
+          designDocumentId: "DOC-101",
+          requirementsDocumentId: "REQ-202",
           apiKey: "backlog-key",
         },
         openAi: {
@@ -72,11 +72,11 @@ describe("POST /api/analysis", () => {
     expect(fetchBacklogDocumentTree).toHaveBeenCalledWith({
       baseUrl: "https://example.backlog.com",
       apiKey: "backlog-key",
-      documentId: 101,
+      documentId: "DOC-101",
     });
 
     expect(generateDesignReviewPrompt).toHaveBeenCalledWith({
-      projectId: 42,
+      projectId: "PRJ-42",
       documentTree: sampleTree,
     });
 
@@ -115,9 +115,9 @@ describe("POST /api/analysis", () => {
       createRequest({
         backlog: {
           baseUrl: "https://example.backlog.com",
-          projectId: 42,
-          designDocumentId: 101,
-          requirementsDocumentId: 202,
+          projectId: "PRJ-42",
+          designDocumentId: "DOC-101",
+          requirementsDocumentId: "REQ-202",
           apiKey: "backlog-key",
         },
         openAi: {
@@ -141,9 +141,9 @@ describe("POST /api/analysis", () => {
       createRequest({
         backlog: {
           baseUrl: "https://example.backlog.com",
-          projectId: 42,
-          designDocumentId: 101,
-          requirementsDocumentId: 202,
+          projectId: "PRJ-42",
+          designDocumentId: "DOC-101",
+          requirementsDocumentId: "REQ-202",
           apiKey: "backlog-key",
         },
         openAi: {
@@ -168,9 +168,9 @@ describe("POST /api/analysis", () => {
       createRequest({
         backlog: {
           baseUrl: "https://example.backlog.com",
-          projectId: 42,
-          designDocumentId: 101,
-          requirementsDocumentId: 202,
+          projectId: "PRJ-42",
+          designDocumentId: "DOC-101",
+          requirementsDocumentId: "REQ-202",
           apiKey: "backlog-key",
         },
         openAi: {
@@ -190,9 +190,9 @@ describe("POST /api/analysis", () => {
       createRequest({
         backlog: {
           baseUrl: "ftp://example.backlog.com", // invalid protocol
-          projectId: 42,
-          designDocumentId: 101,
-          requirementsDocumentId: 202,
+          projectId: "PRJ-42",
+          designDocumentId: "DOC-101",
+          requirementsDocumentId: "REQ-202",
           apiKey: "backlog-key",
         },
         openAi: {

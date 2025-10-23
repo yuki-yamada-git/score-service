@@ -12,33 +12,6 @@ import type { DesignReviewResult as DesignReviewResultType } from "@/app/lib/des
 
 type ConfigurationValues = Record<ConfigurationFieldId, string>;
 
-function parsePositiveInteger(value: string): number | null {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  if (!/^\d+$/.test(trimmed)) {
-    return null;
-  }
-
-  const numberValue = Number.parseInt(trimmed, 10);
-
-  if (!Number.isInteger(numberValue) || numberValue <= 0) {
-    return null;
-  }
-
-  return numberValue;
-}
-
-const BACKLOG_PROJECT_ID_ERROR_MESSAGE =
-  "Backlog のプロジェクトIDには正の整数を入力してください。";
-const DESIGN_DOCUMENT_ID_ERROR_MESSAGE =
-  "Backlog の設計書IDには正の整数を入力してください。";
-const REQUIREMENTS_DOCUMENT_ID_ERROR_MESSAGE =
-  "Backlog の要件定義書IDには正の整数を入力してください。";
-
 const GENERIC_ERROR_MESSAGE = "分析に失敗しました。時間を置いて再度お試しください。";
 
 export function AnalysisDashboard() {
@@ -59,35 +32,12 @@ export function AnalysisDashboard() {
     }
 
     setErrorMessage(null);
-
-    const backlogProjectId = parsePositiveInteger(
-      configurationValues.backlogProjectId,
-    );
-    if (backlogProjectId === null) {
-      setReviewResult(null);
-      setErrorMessage(BACKLOG_PROJECT_ID_ERROR_MESSAGE);
-      return;
-    }
-
-    const designDocumentId = parsePositiveInteger(
-      configurationValues.designDocumentId,
-    );
-    if (designDocumentId === null) {
-      setReviewResult(null);
-      setErrorMessage(DESIGN_DOCUMENT_ID_ERROR_MESSAGE);
-      return;
-    }
-
-    const requirementsDocumentId = parsePositiveInteger(
-      configurationValues.requirementsDocumentId,
-    );
-    if (requirementsDocumentId === null) {
-      setReviewResult(null);
-      setErrorMessage(REQUIREMENTS_DOCUMENT_ID_ERROR_MESSAGE);
-      return;
-    }
-
     setIsAnalyzing(true);
+
+    const backlogProjectId = configurationValues.backlogProjectId.trim();
+    const designDocumentId = configurationValues.designDocumentId.trim();
+    const requirementsDocumentId =
+      configurationValues.requirementsDocumentId.trim();
 
     try {
       const response = await fetch("/api/analysis", {

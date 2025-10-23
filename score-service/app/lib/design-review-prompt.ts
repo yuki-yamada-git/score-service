@@ -53,7 +53,7 @@ const MAX_DOCUMENT_SUMMARIES = 25;
 const MAX_CONTENT_PREVIEW_LENGTH = 400;
 
 export type GenerateDesignReviewPromptOptions = {
-  projectId: number;
+  projectId: string;
   documentTree: BacklogDocumentTreeNode;
 };
 
