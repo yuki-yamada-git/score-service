@@ -1,22 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const fetchBacklogDocumentTree = vi.fn();
-const generateDesignReviewPrompt = vi.fn();
-const requestOpenAiAnalysis = vi.fn();
-const mockSystemPrompt = "system-prompt";
-
-vi.mock("@/app/lib/backlog", () => ({
-  fetchBacklogDocumentTree,
+const backlogMock = vi.hoisted(() => ({
+  fetchBacklogDocumentTree: vi.fn(),
 }));
 
-vi.mock("@/app/lib/design-review-prompt", () => ({
-  DESIGN_REVIEW_SYSTEM_PROMPT: mockSystemPrompt,
-  generateDesignReviewPrompt,
+const designReviewPromptMock = vi.hoisted(() => ({
+  DESIGN_REVIEW_SYSTEM_PROMPT: "system-prompt",
+  generateDesignReviewPrompt: vi.fn(),
 }));
 
-vi.mock("@/app/lib/openai", () => ({
-  requestOpenAiAnalysis,
+const openAiMock = vi.hoisted(() => ({
+  requestOpenAiAnalysis: vi.fn(),
 }));
+
+vi.mock("@/app/lib/backlog", () => backlogMock);
+vi.mock("@/app/lib/design-review-prompt", () => designReviewPromptMock);
+vi.mock("@/app/lib/openai", () => openAiMock);
+
+const { fetchBacklogDocumentTree } = backlogMock;
+const { DESIGN_REVIEW_SYSTEM_PROMPT: mockSystemPrompt, generateDesignReviewPrompt } =
+  designReviewPromptMock;
+const { requestOpenAiAnalysis } = openAiMock;
 
 import type { BacklogDocumentTreeNode } from "@/app/lib/backlog";
 import type { DesignReviewResult } from "@/app/lib/design-review";
