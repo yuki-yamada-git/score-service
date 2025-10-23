@@ -3,6 +3,10 @@
 import { useCallback, useState } from "react";
 
 import { ConfigurationForm } from "@/app/components/ConfigurationForm";
+import {
+  INITIAL_VALUES,
+  type ConfigurationFieldId,
+} from "@/app/lib/configuration-form";
 import { DesignReviewResult } from "@/app/components/DesignReviewResult";
 import {
   buildPreview,
