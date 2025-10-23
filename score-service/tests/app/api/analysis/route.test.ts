@@ -147,7 +147,9 @@ describe("POST /api/analysis", () => {
 
   it("returns 502 when fetching the Backlog document tree fails", async () => {
     fetchBacklogDocumentTree.mockRejectedValue(
-      new Error("Backlog API request failed"),
+      new Error(
+        "Backlog API request failed with status 400: Bad Request (パラメーターが不正です)",
+      ),
     );
 
     const response = await POST(
@@ -167,7 +169,8 @@ describe("POST /api/analysis", () => {
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({
-      error: "Backlog API request failed",
+      error:
+        "Backlog API request failed with status 400: Bad Request (パラメーターが不正です)",
     });
   });
 
