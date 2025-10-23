@@ -11,7 +11,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "next/image": ["tests/mocks/next-image"]
+      "next/image": ["tests/mocks/next-image"],
+      "@testing-library/jest-dom/vitest": [
+        "tests/mocks/testing-library-jest-dom-vitest"
+      ]
     }
   },
   "include": [
