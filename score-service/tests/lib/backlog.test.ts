@@ -168,6 +168,61 @@ describe("BacklogClient", () => {
     );
   });
 
+  it("includes details from Backlog error responses", async () => {
+    const fetchMock = vi.fn(async () =>
+      createErrorResponse(
+        400,
+        "Bad Request",
+        {
+          message: "パラメーターが不正です",
+          errors: [
+            { message: "projectIdOrKey が存在しません" },
+            { message: "apiKey が正しくありません" },
+          ],
+        },
+      ),
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new BacklogClient({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "secret",
+      projectIdOrKey: "PRJ",
+    });
+
+    const expectedMessage =
+      "Backlog API request failed with status 400: Bad Request " +
+      "(パラメーターが不正です; projectIdOrKey が存在しません; apiKey が正しくありません)";
+
+    await expect(client.fetchDocumentTree(1)).rejects.toThrow(expectedMessage);
+  });
+
+  it("falls back to raw text when error response is not JSON", async () => {
+    const fetchMock = vi.fn(async () =>
+      createErrorResponse(
+        502,
+        "Bad Gateway",
+        "Upstream error: unexpected HTML",
+        {
+          "content-type": "text/plain",
+        },
+      ),
+    );
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new BacklogClient({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "secret",
+      projectIdOrKey: "PRJ",
+    });
+
+    await expect(client.fetchDocumentTree(1)).rejects.toThrow(
+      "Backlog API request failed with status 502: Bad Gateway (Upstream error: unexpected HTML)",
+    );
+  });
+
   it("allows documents with empty string content", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
@@ -298,19 +353,34 @@ describe("BacklogClient", () => {
 });
 
 function createJsonResponse<T>(data: T): Response {
-  return {
-    ok: true,
+  return new Response(JSON.stringify(data), {
     status: 200,
     statusText: "OK",
-    json: async () => data,
-  } as unknown as Response;
+    headers: {
+      "content-type": "application/json",
+    },
+  });
 }
 
-function createErrorResponse(status: number, statusText: string): Response {
-  return {
-    ok: false,
+function createErrorResponse(
+  status: number,
+  statusText: string,
+  body?: unknown,
+  headers?: HeadersInit,
+): Response {
+  let payload: BodyInit | null = null;
+  let resolvedHeaders: HeadersInit | undefined;
+
+  if (typeof body === "string") {
+    payload = body;
+  } else if (body !== undefined) {
+    payload = JSON.stringify(body);
+    resolvedHeaders = { "content-type": "application/json" };
+  }
+
+  return new Response(payload, {
     status,
     statusText,
-    json: async () => ({}),
-  } as unknown as Response;
+    headers: { ...resolvedHeaders, ...headers },
+  });
 }
