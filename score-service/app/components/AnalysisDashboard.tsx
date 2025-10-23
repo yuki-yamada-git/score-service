@@ -3,11 +3,20 @@
 import { useState } from "react";
 
 import { ConfigurationForm } from "@/app/components/ConfigurationForm";
+import {
+  INITIAL_VALUES,
+  type ConfigurationFieldId,
+} from "@/app/lib/configuration-form";
 import { DesignReviewResult } from "@/app/components/DesignReviewResult";
 import type { DesignReviewResult as DesignReviewResultType } from "@/app/lib/design-review";
 import { MOCK_DESIGN_REVIEW_RESULT } from "@/app/lib/sample-review";
 
 export function AnalysisDashboard() {
+  const [configurationValues, setConfigurationValues] = useState<
+    Record<ConfigurationFieldId, string>
+  >({
+    ...INITIAL_VALUES,
+  });
   const [reviewResult, setReviewResult] = useState<DesignReviewResultType | null>(null);
 
   const handleStartAnalysis = () => {
@@ -27,7 +36,7 @@ export function AnalysisDashboard() {
           </h1>
         </header>
 
-        <ConfigurationForm />
+        <ConfigurationForm value={configurationValues} onChange={setConfigurationValues} />
 
         <footer className="text-center text-xs text-slate-500 sm:text-left">
           入力した情報はこのページ内でのみ保持され、外部へ送信されません。
