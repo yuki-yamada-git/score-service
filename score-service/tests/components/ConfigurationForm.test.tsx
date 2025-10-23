@@ -1,10 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ConfigurationForm } from "../../app/components/ConfigurationForm";
 import { INITIAL_VALUES } from "../../app/lib/configuration-form";
 
 describe("ConfigurationForm", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders all required input fields and preview", () => {
     render(<ConfigurationForm />);
 
@@ -37,6 +41,36 @@ describe("ConfigurationForm", () => {
           backlogProjectId: "42",
         }),
       );
+    });
+  });
+
+  it("resets internal state when initialValues prop changes", async () => {
+    const handleValuesChange = vi.fn();
+    const { rerender } = render(
+      <ConfigurationForm
+        onValuesChange={handleValuesChange}
+        initialValues={{ backlogProjectId: "123" }}
+      />,
+    );
+
+    const projectInput = screen.getByLabelText(
+      "Backlog の Project ID",
+    ) as HTMLInputElement;
+
+    expect(projectInput.value).toBe("123");
+
+    fireEvent.change(projectInput, { target: { value: "456" } });
+    expect(projectInput.value).toBe("456");
+
+    rerender(
+      <ConfigurationForm
+        onValuesChange={handleValuesChange}
+        initialValues={{ backlogProjectId: "789" }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(projectInput.value).toBe("789");
     });
   });
 });

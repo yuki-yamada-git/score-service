@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AnalysisDashboard } from "../../app/components/AnalysisDashboard";
@@ -16,6 +16,7 @@ describe("AnalysisDashboard", () => {
     }
 
     vi.restoreAllMocks();
+    cleanup();
   });
 
   it("posts configuration and renders the analysis result when the request succeeds", async () => {

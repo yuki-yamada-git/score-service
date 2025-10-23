@@ -18,6 +18,10 @@ type ConfigurationFormProps = {
    * プレビューの表示だけでなく、親コンポーネントからも入力値を参照できるようにする。
    */
   onValuesChange?: (values: Record<ConfigurationFieldId, string>) => void;
+  /**
+   * フォームの初期値。外部から状態を復元するときに利用する。
+   */
+  initialValues?: Partial<Record<ConfigurationFieldId, string>>;
 };
 
 const IMPORT_PLACEHOLDER = `{
@@ -29,9 +33,17 @@ const IMPORT_PLACEHOLDER = `{
   }
 }`;
 
-export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
+export function ConfigurationForm({ onValuesChange, initialValues }: ConfigurationFormProps) {
+  const resolvedInitialValues = useMemo(
+    () => ({
+      ...INITIAL_VALUES,
+      ...(initialValues ?? {}),
+    }),
+    [initialValues],
+  );
+
   const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
-    ...INITIAL_VALUES,
+    ...resolvedInitialValues,
   });
   const [hasCopied, setHasCopied] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -41,6 +53,16 @@ export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
   const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
+
+  useEffect(() => {
+    setValues((current) => {
+      if (areConfigurationValuesEqual(current, resolvedInitialValues)) {
+        return current;
+      }
+
+      return { ...resolvedInitialValues };
+    });
+  }, [resolvedInitialValues]);
 
   useEffect(() => {
     if (!onValuesChange) {
@@ -60,7 +82,7 @@ export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
 
   // 入力値とコピー状態を初期化する。
   const handleReset = () => {
-    setValues({ ...INITIAL_VALUES });
+    setValues({ ...resolvedInitialValues });
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -119,7 +141,7 @@ export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
       return;
     }
 
-    setValues(nextValues);
+    setValues({ ...nextValues });
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -241,4 +263,11 @@ export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
       </div>
     </section>
   );
+}
+
+function areConfigurationValuesEqual(
+  a: Record<ConfigurationFieldId, string>,
+  b: Record<ConfigurationFieldId, string>,
+) : boolean {
+  return FIELD_DEFINITIONS.every((field) => a[field.id] === b[field.id]);
 }
