@@ -90,6 +90,7 @@ describe("BacklogClient", () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
     });
 
     const tree = await client.fetchDocumentTree(1);
@@ -128,15 +129,25 @@ describe("BacklogClient", () => {
     expect(tree).toEqual(expected);
 
     const requestedUrls = fetchMock.mock.calls.map(([input]) =>
-      input instanceof URL ? input.href : String(input),
+      new URL(String(input)),
     );
 
-    expect(requestedUrls).toContain(
-      "https://example.backlog.com/api/v2/documents/1?apiKey=secret",
-    );
-    expect(requestedUrls).toContain(
-      "https://example.backlog.com/api/v2/documents/1/children?apiKey=secret",
-    );
+    expect(
+      requestedUrls.some(
+        (url) =>
+          url.pathname === "/api/v2/documents/1" &&
+          url.searchParams.get("apiKey") === "secret" &&
+          url.searchParams.get("projectIdOrKey") === "PRJ",
+      ),
+    ).toBe(true);
+    expect(
+      requestedUrls.some(
+        (url) =>
+          url.pathname === "/api/v2/documents/1/children" &&
+          url.searchParams.get("apiKey") === "secret" &&
+          url.searchParams.get("projectIdOrKey") === "PRJ",
+      ),
+    ).toBe(true);
   });
 
   it("throws when the API returns an error", async () => {
@@ -149,6 +160,7 @@ describe("BacklogClient", () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
     });
 
     await expect(client.fetchDocumentTree(1)).rejects.toThrow(
@@ -181,6 +193,7 @@ describe("BacklogClient", () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
     });
 
     const document = await client.fetchDocumentTree(10);
@@ -218,6 +231,7 @@ describe("BacklogClient", () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
     });
 
     const document = await client.fetchDocumentTree(55);
@@ -250,6 +264,7 @@ describe("BacklogClient", () => {
     const tree = await fetchBacklogDocumentTree({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
       documentId: "DOC-5",
     });
 
@@ -261,6 +276,7 @@ describe("BacklogClient", () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
+      projectIdOrKey: "PRJ",
     });
 
     await expect(client.fetchDocumentTree(0)).rejects.toThrow(

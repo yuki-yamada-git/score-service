@@ -76,6 +76,7 @@ describe("POST /api/analysis", () => {
     expect(fetchBacklogDocumentTree).toHaveBeenCalledWith({
       baseUrl: "https://example.backlog.com",
       apiKey: "backlog-key",
+      projectIdOrKey: "PRJ-42",
       documentId: "DOC-101",
     });
 
@@ -139,6 +140,7 @@ describe("POST /api/analysis", () => {
     expect(fetchBacklogDocumentTree).toHaveBeenCalledWith({
       baseUrl: "https://example.backlog.com",
       apiKey: "backlog-key",
+      projectIdOrKey: "PRJ-42",
       documentId: "REQ-202",
     });
   });
