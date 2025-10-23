@@ -168,25 +168,37 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
       </div>
 
       <form className="grid gap-6" onSubmit={(event) => event.preventDefault()}>
-        {FIELD_DEFINITIONS.map((field) => (
-          <div key={field.id} className="group grid gap-2">
-            <label className="text-sm font-medium text-slate-200" htmlFor={field.id}>
-              {field.label}
-            </label>
-            <input
-              id={field.id}
-              autoComplete={field.autoComplete}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 group-hover:border-slate-600"
-              onChange={(event) => handleChange(field.id, event.target.value)}
-              placeholder={field.placeholder}
-              type={field.type ?? "text"}
-              value={values[field.id]}
-            />
-            {field.description ? (
-              <span className="text-xs text-slate-400">{field.description}</span>
-            ) : null}
-          </div>
-        ))}
+        {FIELD_DEFINITIONS.map((field) => {
+          const descriptionId = field.description
+            ? `${field.id}-description`
+            : undefined;
+
+          return (
+            <div key={field.id} className="group grid gap-2">
+              <label
+                className="text-sm font-medium text-slate-200"
+                htmlFor={field.id}
+              >
+                {field.label}
+              </label>
+              <input
+                id={field.id}
+                aria-describedby={descriptionId}
+                autoComplete={field.autoComplete}
+                className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30 group-hover:border-slate-600"
+                onChange={(event) => handleChange(field.id, event.target.value)}
+                placeholder={field.placeholder}
+                type={field.type ?? "text"}
+                value={values[field.id]}
+              />
+              {field.description ? (
+                <span id={descriptionId} className="text-xs text-slate-400">
+                  {field.description}
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
 
         <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <button
