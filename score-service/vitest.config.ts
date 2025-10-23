@@ -19,6 +19,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "."),
       "next/image": path.resolve(__dirname, "tests/mocks/next-image.tsx"),
+      "@testing-library/jest-dom/vitest": path.resolve(
+        __dirname,
+        "tests/mocks/testing-library-jest-dom-vitest.ts"
+      ),
     },
   },
 });
