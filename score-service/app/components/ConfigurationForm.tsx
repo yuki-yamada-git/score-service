@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   FIELD_DEFINITIONS,
@@ -13,8 +13,15 @@ import {
 import { copyTextToClipboard } from "@/app/lib/copy-to-clipboard";
 
 type ConfigurationFormProps = {
-  value: Record<ConfigurationFieldId, string>;
-  onChange: (nextValues: Record<ConfigurationFieldId, string>) => void;
+  /**
+   * フォーム内で保持している値が更新された際に呼び出されるコールバック。
+   * プレビューの表示だけでなく、親コンポーネントからも入力値を参照できるようにする。
+   */
+  onValuesChange?: (values: Record<ConfigurationFieldId, string>) => void;
+  /**
+   * フォームの初期値。外部から状態を復元するときに利用する。
+   */
+  initialValues?: Partial<Record<ConfigurationFieldId, string>>;
 };
 
 const IMPORT_PLACEHOLDER = `{
@@ -26,7 +33,18 @@ const IMPORT_PLACEHOLDER = `{
   }
 }`;
 
-export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
+export function ConfigurationForm({ onValuesChange, initialValues }: ConfigurationFormProps) {
+  const resolvedInitialValues = useMemo(
+    () => ({
+      ...INITIAL_VALUES,
+      ...(initialValues ?? {}),
+    }),
+    [initialValues],
+  );
+
+  const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
+    ...resolvedInitialValues,
+  });
   const [hasCopied, setHasCopied] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -35,6 +53,24 @@ export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
   const preview = useMemo<PreviewState>(() => buildPreview(value), [value]);
+
+  useEffect(() => {
+    setValues((current) => {
+      if (areConfigurationValuesEqual(current, resolvedInitialValues)) {
+        return current;
+      }
+
+      return { ...resolvedInitialValues };
+    });
+  }, [resolvedInitialValues]);
+
+  useEffect(() => {
+    if (!onValuesChange) {
+      return;
+    }
+
+    onValuesChange({ ...values });
+  }, [onValuesChange, values]);
 
   // 各入力フィールドの変更を受け取り、対応する値を更新する。
   const handleChange = (fieldId: ConfigurationFieldId, nextValue: string) => {
@@ -46,7 +82,7 @@ export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
 
   // 入力値とコピー状態を初期化する。
   const handleReset = () => {
-    onChange({ ...INITIAL_VALUES });
+    setValues({ ...resolvedInitialValues });
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -105,7 +141,7 @@ export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
       return;
     }
 
-    onChange(nextValues);
+    setValues({ ...nextValues });
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -227,4 +263,11 @@ export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
       </div>
     </section>
   );
+}
+
+function areConfigurationValuesEqual(
+  a: Record<ConfigurationFieldId, string>,
+  b: Record<ConfigurationFieldId, string>,
+): boolean {
+  return FIELD_DEFINITIONS.every((field) => a[field.id] === b[field.id]);
 }
