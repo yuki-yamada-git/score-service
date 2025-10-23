@@ -1,3 +1,5 @@
+import { ZodIssueCode, type ZodIssue } from "zod";
+
 import { analysisRequestSchema } from "@/app/lib/analysis-schema";
 import {
   InvalidAnalysisResultError,
@@ -32,7 +34,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const parseResult = analysisRequestSchema.safeParse(rawBody);
   if (!parseResult.success) {
-    const message = parseResult.error.issues.map((issue) => issue.message).join("; ");
+    const message = formatZodErrorMessages(parseResult.error.issues);
     return jsonError(message, HTTP_STATUS.badRequest);
   }
 
@@ -116,4 +118,45 @@ function getErrorMessage(error: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+function formatZodErrorMessages(issues: ZodIssue[]): string {
+  const messages = new Set<string>();
+
+  const collect = (issue: ZodIssue) => {
+    if (issue.message) {
+      messages.add(issue.message);
+    }
+
+    switch (issue.code) {
+      case ZodIssueCode.invalid_union: {
+        for (const error of issue.unionErrors) {
+          for (const nestedIssue of error.issues) {
+            collect(nestedIssue);
+          }
+        }
+        break;
+      }
+      case ZodIssueCode.invalid_arguments: {
+        for (const nestedIssue of issue.argumentsError.issues) {
+          collect(nestedIssue);
+        }
+        break;
+      }
+      case ZodIssueCode.invalid_return_type: {
+        for (const nestedIssue of issue.returnTypeError.issues) {
+          collect(nestedIssue);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
+  for (const issue of issues) {
+    collect(issue);
+  }
+
+  return Array.from(messages).join("; ");
 }
