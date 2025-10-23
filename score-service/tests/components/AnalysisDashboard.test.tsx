@@ -29,6 +29,13 @@ describe("AnalysisDashboard", () => {
 
     render(<AnalysisDashboard />);
 
+    const baseUrlInput = screen.getByLabelText(
+      "Backlog のスペース URL",
+    ) as HTMLInputElement;
+    fireEvent.change(baseUrlInput, {
+      target: { value: "https://example.backlog.com" },
+    });
+
     const projectInput = screen.getByLabelText("Backlog の Project ID") as HTMLInputElement;
     fireEvent.change(projectInput, { target: { value: "123" } });
 
@@ -43,10 +50,11 @@ describe("AnalysisDashboard", () => {
 
     const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const requestBody = JSON.parse(requestInit.body as string) as {
-      configuration: { backlogProjectId?: string };
+      backlog: { baseUrl?: string; projectId?: string };
     };
 
-    expect(requestBody.configuration.backlogProjectId).toBe("123");
+    expect(requestBody.backlog.baseUrl).toBe("https://example.backlog.com");
+    expect(requestBody.backlog.projectId).toBe("123");
 
     await waitFor(() => {
       expect(

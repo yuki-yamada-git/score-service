@@ -12,6 +12,7 @@ describe("ConfigurationForm", () => {
   it("renders all required input fields and preview", () => {
     render(<ConfigurationForm />);
 
+    expect(screen.getByLabelText("Backlog のスペース URL")).toBeTruthy();
     expect(screen.getByLabelText("Backlog の Project ID")).toBeTruthy();
     expect(screen.getByLabelText("設計書の ID")).toBeTruthy();
     expect(screen.getByLabelText("要件定義書の ID")).toBeTruthy();
@@ -32,12 +33,20 @@ describe("ConfigurationForm", () => {
       });
     });
 
+    const baseUrlInput = screen.getByLabelText(
+      "Backlog のスペース URL",
+    ) as HTMLInputElement;
+    fireEvent.change(baseUrlInput, {
+      target: { value: "https://example.backlog.com" },
+    });
+
     const projectInput = screen.getByLabelText("Backlog の Project ID") as HTMLInputElement;
     fireEvent.change(projectInput, { target: { value: "42" } });
 
     await waitFor(() => {
       expect(handleValuesChange).toHaveBeenLastCalledWith(
         expect.objectContaining({
+          backlogBaseUrl: "https://example.backlog.com",
           backlogProjectId: "42",
         }),
       );
