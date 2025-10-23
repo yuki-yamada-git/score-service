@@ -95,7 +95,10 @@ function parseScore(value: unknown, path: string): DesignReviewScore {
   };
 }
 
-function parseOverallEvaluation(value: unknown, path: string) {
+function parseOverallEvaluation(
+  value: unknown,
+  path: string,
+): DesignReviewDocumentResult["overallEvaluation"] {
   if (typeof value !== "object" || value === null) {
     throw new InvalidAnalysisResultError(`${path} must be an object`);
   }
@@ -166,7 +169,7 @@ function expectArray(value: unknown, path: string): unknown[] {
 }
 
 function expectString(value: unknown, path: string): string {
-  if (typeof value !== "string" || !value) {
+  if (typeof value !== "string" || value.trim().length === 0) {
     throw new InvalidAnalysisResultError(`${path} must be a non-empty string`);
   }
 
@@ -174,7 +177,7 @@ function expectString(value: unknown, path: string): string {
 }
 
 function expectNumber(value: unknown, path: string): number {
-  if (typeof value !== "number" || Number.isNaN(value)) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new InvalidAnalysisResultError(`${path} must be a number`);
   }
 
