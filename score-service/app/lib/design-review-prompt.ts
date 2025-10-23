@@ -29,4 +29,21 @@ export function buildDesignReviewPrompt({
     : "(参照ドキュメント情報なし)";
 
   return `レビュー対象プロジェクト: ${projectName}\n\nレビュー目的:\n${objectivesText}\n\n参照ドキュメント一覧:\n${documentsText}\n\n上記の情報をもとに、評価結果と改善提案を作成してください。`;
+import type { BacklogDocumentTreeNode } from "@/app/lib/backlog";
+
+export type GenerateDesignReviewPromptOptions = {
+  projectId: number;
+  documentTree: BacklogDocumentTreeNode;
+};
+
+export function generateDesignReviewPrompt({
+  projectId,
+  documentTree,
+}: GenerateDesignReviewPromptOptions): string {
+  const documentCount = countDocuments(documentTree);
+  return `Project ${projectId} document tree with ${documentCount} documents.`;
+}
+
+function countDocuments(node: BacklogDocumentTreeNode): number {
+  return node.children.reduce((total, child) => total + countDocuments(child), 1);
 }
