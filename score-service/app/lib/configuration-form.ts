@@ -119,3 +119,85 @@ export function buildPreview(values: Record<ConfigurationFieldId, string>): Prev
 
   return { backlog, openAi };
 }
+
+/**
+ * JSON テキストをフォームの入力値に変換する。
+ * 想定外の構造や値が与えられた場合は null を返す。
+ */
+export function parseConfigurationJson(
+  jsonText: string,
+): Record<ConfigurationFieldId, string> | null {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+
+  if (typeof parsed !== "object" || parsed === null) {
+    return null;
+  }
+
+  const result: Record<ConfigurationFieldId, string> = {
+    ...INITIAL_VALUES,
+  };
+  let hasAnyValue = false;
+
+  const backlog = (parsed as { backlog?: unknown }).backlog;
+  if (typeof backlog === "object" && backlog !== null) {
+    const backlogRecord = backlog as Record<string, unknown>;
+
+    hasAnyValue =
+      assignIfValidValue(result, "backlogProjectId", backlogRecord.projectId) || hasAnyValue;
+    hasAnyValue =
+      assignIfValidValue(result, "designDocumentId", backlogRecord.designDocumentId) || hasAnyValue;
+    hasAnyValue =
+      assignIfValidValue(result, "requirementsDocumentId", backlogRecord.requirementsDocumentId) ||
+      hasAnyValue;
+    hasAnyValue = assignIfValidValue(result, "backlogApiKey", backlogRecord.apiKey) || hasAnyValue;
+  } else if (backlog !== undefined) {
+    return null;
+  }
+
+  const openAi = (parsed as { openAi?: unknown }).openAi;
+  if (typeof openAi === "object" && openAi !== null) {
+    const openAiRecord = openAi as Record<string, unknown>;
+
+    hasAnyValue = assignIfValidValue(result, "openAiApiKey", openAiRecord.apiKey) || hasAnyValue;
+  } else if (openAi !== undefined) {
+    return null;
+  }
+
+  const hasRecognizedSection =
+    (typeof backlog === "object" && backlog !== null) ||
+    (typeof openAi === "object" && openAi !== null);
+
+  if (!hasAnyValue && !hasRecognizedSection) {
+    return null;
+  }
+
+  return result;
+}
+
+function assignIfValidValue(
+  values: Record<ConfigurationFieldId, string>,
+  fieldId: ConfigurationFieldId,
+  source: unknown,
+): boolean {
+  if (source === undefined || source === null) {
+    return false;
+  }
+
+  if (typeof source === "string") {
+    values[fieldId] = source;
+    return true;
+  }
+
+  if (typeof source === "number" || typeof source === "boolean") {
+    values[fieldId] = String(source);
+    return true;
+  }
+
+  return false;
+}

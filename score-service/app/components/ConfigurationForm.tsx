@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import {
   FIELD_DEFINITIONS,
@@ -8,14 +8,28 @@ import {
   type ConfigurationFieldId,
   type PreviewState,
   buildPreview,
+  parseConfigurationJson,
 } from "@/app/lib/configuration-form";
 import { copyTextToClipboard } from "@/app/lib/copy-to-clipboard";
+
+const IMPORT_PLACEHOLDER = `{
+  "backlog": {
+    ...
+  },
+  "openAi": {
+    ...
+  }
+}`;
 
 export function ConfigurationForm() {
   const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
     ...INITIAL_VALUES,
   });
   const [hasCopied, setHasCopied] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const importTextAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
   const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
@@ -32,6 +46,9 @@ export function ConfigurationForm() {
   const handleReset = () => {
     setValues({ ...INITIAL_VALUES });
     setHasCopied(false);
+    setImportError(null);
+    setImportText("");
+    setIsImportOpen(false);
   };
 
   const handleCopy = async () => {
@@ -46,6 +63,51 @@ export function ConfigurationForm() {
     }
 
     setHasCopied(false);
+  };
+
+  const handleToggleImport = () => {
+    setIsImportOpen((current) => {
+      const next = !current;
+
+      if (!next) {
+        setImportText("");
+        setImportError(null);
+      }
+
+      return next;
+    });
+
+    // インポートパネルを開いたときにテキストエリアへフォーカスする。
+    if (!isImportOpen) {
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => {
+          importTextAreaRef.current?.focus();
+        });
+        return;
+      }
+
+      importTextAreaRef.current?.focus();
+    }
+  };
+
+  const handleImport = () => {
+    if (!importText.trim()) {
+      setImportError("JSON を入力してください。");
+      return;
+    }
+
+    const nextValues = parseConfigurationJson(importText);
+
+    if (!nextValues) {
+      setImportError("JSON の内容を読み取れませんでした。形式を確認してください。");
+      return;
+    }
+
+    setValues(nextValues);
+    setHasCopied(false);
+    setImportError(null);
+    setImportText("");
+    setIsImportOpen(false);
   };
 
   return (
@@ -76,13 +138,20 @@ export function ConfigurationForm() {
           </label>
         ))}
 
-        <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-lg border border-transparent bg-slate-800 px-5 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-700"
             onClick={handleReset}
           >
             クリア
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-lg border border-sky-500/70 bg-slate-900 px-5 py-2 text-sm font-semibold text-sky-400 transition hover:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 focus:ring-offset-slate-950"
+            onClick={handleToggleImport}
+          >
+            JSON をインポート
           </button>
           <button
             type="button"
@@ -94,7 +163,55 @@ export function ConfigurationForm() {
           {hasCopied ? (
             <span className="text-xs font-medium text-emerald-400">コピーしました</span>
           ) : null}
+          {importError && !isImportOpen ? (
+            <span className="text-xs font-medium text-rose-400 sm:basis-full sm:text-right">
+              {importError}
+            </span>
+          ) : null}
         </div>
+
+        {isImportOpen ? (
+          <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/80 p-4">
+            <label className="grid gap-2" htmlFor="configuration-import-json">
+              <span className="text-xs font-medium text-slate-300">
+                コピーした JSON を貼り付けてください
+              </span>
+              <textarea
+                id="configuration-import-json"
+                ref={importTextAreaRef}
+                className="h-40 w-full rounded-lg border border-slate-700 bg-slate-900/80 px-4 py-3 text-xs text-slate-100 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30"
+                placeholder={IMPORT_PLACEHOLDER}
+                spellCheck={false}
+                value={importText}
+                onChange={(event) => {
+                  setImportText(event.target.value);
+                  if (importError) {
+                    setImportError(null);
+                  }
+                }}
+              />
+            </label>
+            {importError ? (
+              <span className="text-xs font-medium text-rose-400">{importError}</span>
+            ) : null}
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-transparent bg-slate-800 px-5 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-700"
+                onClick={handleToggleImport}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-sky-500/70 bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-sky-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 focus:ring-offset-slate-950"
+                onClick={handleImport}
+              >
+                読み込む
+              </button>
+            </div>
+          </div>
+        ) : null}
       </form>
 
       <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/80 p-4">

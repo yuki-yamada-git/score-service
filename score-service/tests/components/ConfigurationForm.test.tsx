@@ -20,6 +20,7 @@ describe("ConfigurationForm", () => {
     }
 
     expect(markup.includes("JSON をコピー")).toBe(true);
+    expect(markup.includes("JSON をインポート")).toBe(true);
     expect(markup.includes("&quot;backlog&quot;: {")).toBe(true);
     expect(markup.includes("&quot;openAi&quot;: {")).toBe(true);
   });
