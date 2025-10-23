@@ -12,7 +12,7 @@ export type BacklogClientOptions = {
   /** Backlog の個人 API キー。 */
   apiKey: string;
   /**
-   * Backlog のプロジェクト識別子。ドキュメント API のパス生成に利用される。
+   * Backlog のプロジェクト識別子。URL の `projects/{projectIdOrKey}` に利用する。
    * 例: "PRJ" や "123"
    */
   projectIdOrKey: string;
@@ -124,7 +124,6 @@ export class BacklogClient {
   private readonly baseApiUrl: URL;
   private readonly apiKey: string;
   private readonly projectIdOrKey: string;
-  private readonly projectDocumentsBasePath: string;
 
   constructor({ baseUrl, apiKey, projectIdOrKey }: BacklogClientOptions) {
     if (!baseUrl) {
@@ -135,7 +134,7 @@ export class BacklogClient {
       throw new Error("Backlog API key is required");
     }
 
-    if (!projectIdOrKey) {
+    if (!projectIdOrKey?.trim()) {
       throw new Error("Backlog projectIdOrKey is required");
     }
 
@@ -143,14 +142,6 @@ export class BacklogClient {
     this.baseApiUrl = new URL("api/v2/", normalizedBase);
     this.apiKey = apiKey;
     this.projectIdOrKey = projectIdOrKey.trim();
-
-    if (!this.projectIdOrKey) {
-      throw new Error("Backlog projectIdOrKey is required");
-    }
-
-    this.projectDocumentsBasePath = `projects/${encodeURIComponent(
-      this.projectIdOrKey,
-    )}/documents/`;
   }
 
   /**
@@ -295,20 +286,9 @@ export class BacklogClient {
     return (await response.json()) as T;
   }
 
-  private buildDocumentPath(documentId: string, ...segments: string[]): string {
-    const normalizedDocumentId = documentId.trim();
-    const encodedDocumentId = encodeURIComponent(normalizedDocumentId);
-    const normalizedSegments = segments
-      .map((segment) => segment.trim().replace(/^\/+|\/+$/g, ""))
-      .filter(Boolean);
-
-    if (normalizedSegments.length === 0) {
-      return `${this.projectDocumentsBasePath}${encodedDocumentId}`;
-    }
-
-    return `${this.projectDocumentsBasePath}${encodedDocumentId}/${normalizedSegments.join(
-      "/",
-    )}`;
+  private buildDocumentPath(documentId: string, suffix?: string): string {
+    const normalizedSuffix = suffix ? `/${suffix}` : "";
+    return `projects/${this.projectIdOrKey}/documents/${documentId}${normalizedSuffix}`;
   }
 }
 

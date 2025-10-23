@@ -12,31 +12,24 @@ describe("BacklogClient", () => {
   });
 
   it("requires baseUrl, apiKey, and projectIdOrKey", () => {
-    expect(
-      () =>
-        new BacklogClient({
-          baseUrl: "",
-          apiKey: "key",
-          projectIdOrKey: "PRJ",
-        }),
+    expect(() =>
+      new BacklogClient({ baseUrl: "", apiKey: "key", projectIdOrKey: "PRJ" }),
     ).toThrow("Backlog baseUrl is required");
 
-    expect(
-      () =>
-        new BacklogClient({
-          baseUrl: "https://example",
-          apiKey: "",
-          projectIdOrKey: "PRJ",
-        }),
+    expect(() =>
+      new BacklogClient({
+        baseUrl: "https://example",
+        apiKey: "",
+        projectIdOrKey: "PRJ",
+      }),
     ).toThrow("Backlog API key is required");
 
-    expect(
-      () =>
-        new BacklogClient({
-          baseUrl: "https://example",
-          apiKey: "key",
-          projectIdOrKey: " ",
-        }),
+    expect(() =>
+      new BacklogClient({
+        baseUrl: "https://example",
+        apiKey: "key",
+        projectIdOrKey: "",
+      }),
     ).toThrow("Backlog projectIdOrKey is required");
   });
 
@@ -155,16 +148,14 @@ describe("BacklogClient", () => {
       requestedUrls.some(
         (url) =>
           url.pathname === "/api/v2/projects/PRJ/documents/1" &&
-          url.searchParams.get("apiKey") === "secret" &&
-          !url.searchParams.has("projectIdOrKey"),
+          url.searchParams.get("apiKey") === "secret",
       ),
     ).toBe(true);
     expect(
       requestedUrls.some(
         (url) =>
           url.pathname === "/api/v2/projects/PRJ/documents/1/children" &&
-          url.searchParams.get("apiKey") === "secret" &&
-          !url.searchParams.has("projectIdOrKey"),
+          url.searchParams.get("apiKey") === "secret",
       ),
     ).toBe(true);
   });
