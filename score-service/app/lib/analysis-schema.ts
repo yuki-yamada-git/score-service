@@ -89,13 +89,33 @@ const createBacklogBaseUrlSchema = () =>
       return parsed.origin;
     });
 
-const backlogRequestSchema = z.object({
-  baseUrl: createBacklogBaseUrlSchema(),
-  projectId: createIdentifierSchema("Backlog project ID"),
-  designDocumentId: createIdentifierSchema("Design document ID"),
-  requirementsDocumentId: createIdentifierSchema("Requirements document ID"),
-  apiKey: createNonEmptyStringSchema("Backlog API key"),
-});
+const backlogRequestSchema = z
+  .object({
+    baseUrl: createBacklogBaseUrlSchema(),
+    projectId: createIdentifierSchema("Backlog project ID"),
+    designDocumentId: createIdentifierSchema("Design document ID").optional(),
+    requirementsDocumentId: createIdentifierSchema(
+      "Requirements document ID",
+    ).optional(),
+    apiKey: createNonEmptyStringSchema("Backlog API key"),
+  })
+  .superRefine(({ designDocumentId, requirementsDocumentId }, ctx) => {
+    if (!designDocumentId && !requirementsDocumentId) {
+      const message =
+        "Either Design document ID or Requirements document ID is required";
+
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["designDocumentId"],
+        message,
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["requirementsDocumentId"],
+        message,
+      });
+    }
+  });
 
 const openAiRequestSchema = z.object({
   apiKey: createNonEmptyStringSchema("OpenAI API key"),

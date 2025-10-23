@@ -104,10 +104,43 @@ describe("POST /api/analysis", () => {
 
     expect(response.status).toBe(400);
     const payload = (await response.json()) as { error: string };
-    expect(payload.error).toContain("Design document ID is required");
-    expect(payload.error).toContain("Requirements document ID is required");
+    expect(payload.error).toContain(
+      "Either Design document ID or Requirements document ID is required",
+    );
     expect(payload.error).toContain("Backlog API key is required");
     expect(payload.error).toContain("OpenAI API key is required");
+  });
+
+  it("falls back to requirements document ID when design document ID is missing", async () => {
+    fetchBacklogDocumentTree.mockResolvedValue(sampleTree);
+    generateDesignReviewPrompt.mockReturnValue("Prompt text");
+    requestOpenAiAnalysis.mockResolvedValue({
+      id: "analysis-123",
+      content: JSON.stringify(MOCK_DESIGN_REVIEW_RESULT as DesignReviewResult),
+    });
+
+    const response = await POST(
+      createRequest({
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: "PRJ-42",
+          requirementsDocumentId: "REQ-202",
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual(MOCK_DESIGN_REVIEW_RESULT);
+
+    expect(fetchBacklogDocumentTree).toHaveBeenCalledWith({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "backlog-key",
+      documentId: "REQ-202",
+    });
   });
 
   it("returns 502 when fetching the Backlog document tree fails", async () => {
