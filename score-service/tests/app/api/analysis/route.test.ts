@@ -39,13 +39,8 @@ describe("POST /api/analysis", () => {
       body: JSON.stringify(body),
     });
 
-  beforeEach(() => {
-    process.env.BACKLOG_BASE_URL = "https://example.backlog.com";
-  });
-
   afterEach(() => {
     vi.clearAllMocks();
-    delete process.env.BACKLOG_BASE_URL;
   });
 
   it("returns the design review result when analysis succeeds", async () => {
@@ -59,6 +54,7 @@ describe("POST /api/analysis", () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: "42",
           designDocumentId: "101",
           requirementsDocumentId: "202",
@@ -95,6 +91,7 @@ describe("POST /api/analysis", () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: "101",
         },
         openAi: {},
@@ -117,6 +114,7 @@ describe("POST /api/analysis", () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: 42,
           designDocumentId: 101,
           requirementsDocumentId: 202,
@@ -142,6 +140,7 @@ describe("POST /api/analysis", () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: 42,
           designDocumentId: 101,
           requirementsDocumentId: 202,
@@ -168,6 +167,7 @@ describe("POST /api/analysis", () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: 42,
           designDocumentId: 101,
           requirementsDocumentId: 202,
@@ -185,12 +185,11 @@ describe("POST /api/analysis", () => {
     });
   });
 
-  it("returns 500 when the Backlog base URL is not configured", async () => {
-    delete process.env.BACKLOG_BASE_URL;
-
+  it("returns 400 when the Backlog base URL is invalid", async () => {
     const response = await POST(
       createRequest({
         backlog: {
+          baseUrl: "ftp://example.backlog.com", // invalid protocol
           projectId: 42,
           designDocumentId: 101,
           requirementsDocumentId: 202,
@@ -202,9 +201,8 @@ describe("POST /api/analysis", () => {
       }),
     );
 
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      error: "Environment variable BACKLOG_BASE_URL is required",
-    });
+    expect(response.status).toBe(400);
+    const payload = (await response.json()) as { error: string };
+    expect(payload.error).toContain("Backlog base URL must use http or https");
   });
 });

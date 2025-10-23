@@ -42,6 +42,7 @@ export function AnalysisDashboard() {
         },
         body: JSON.stringify({
           backlog: {
+            baseUrl: configurationValues.backlogBaseUrl,
             projectId: configurationValues.backlogProjectId,
             designDocumentId: configurationValues.designDocumentId,
             requirementsDocumentId: configurationValues.requirementsDocumentId,

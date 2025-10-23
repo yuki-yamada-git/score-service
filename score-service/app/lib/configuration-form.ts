@@ -3,6 +3,7 @@
  * UI とロジックの両方で共有するため、ここに集約している。
  */
 export type ConfigurationFieldId =
+  | "backlogBaseUrl"
   | "backlogProjectId"
   | "designDocumentId"
   | "requirementsDocumentId"
@@ -26,6 +27,7 @@ export type FieldDefinition = {
  */
 export type PreviewState = {
   backlog: {
+    baseUrl?: string;
     projectId?: string;
     designDocumentId?: string;
     requirementsDocumentId?: string;
@@ -41,6 +43,13 @@ export type PreviewState = {
  * UI とプレビュー生成の両方で共通利用する。
  */
 export const FIELD_DEFINITIONS: FieldDefinition[] = [
+  {
+    id: "backlogBaseUrl",
+    label: "Backlog のスペース URL",
+    placeholder: "例: https://example.backlog.com",
+    description:
+      "Backlog にアクセスするためのスペース URL を入力してください。http(s) から始まるオリジンのみを受け付けます。",
+  },
   {
     id: "backlogProjectId",
     label: "Backlog の Project ID",
@@ -97,6 +106,10 @@ export function buildPreview(values: Record<ConfigurationFieldId, string>): Prev
   const backlog: PreviewState["backlog"] = {};
   const openAi: PreviewState["openAi"] = {};
 
+  if (values.backlogBaseUrl) {
+    backlog.baseUrl = values.backlogBaseUrl;
+  }
+
   if (values.backlogProjectId) {
     backlog.projectId = values.backlogProjectId;
   }
@@ -148,6 +161,8 @@ export function parseConfigurationJson(
   if (typeof backlog === "object" && backlog !== null) {
     const backlogRecord = backlog as Record<string, unknown>;
 
+    hasAnyValue =
+      assignIfValidValue(result, "backlogBaseUrl", backlogRecord.baseUrl) || hasAnyValue;
     hasAnyValue =
       assignIfValidValue(result, "backlogProjectId", backlogRecord.projectId) || hasAnyValue;
     hasAnyValue =

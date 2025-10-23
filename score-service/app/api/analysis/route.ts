@@ -10,7 +10,6 @@ import {
   generateDesignReviewPrompt,
 } from "@/app/lib/design-review-prompt";
 import { requestOpenAiAnalysis } from "@/app/lib/openai";
-import { getBacklogBaseUrl } from "@/app/lib/server-config";
 
 const HTTP_STATUS = {
   badRequest: 400,
@@ -37,18 +36,8 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError(message, HTTP_STATUS.badRequest);
   }
 
-  let backlogBaseUrl: string;
-  try {
-    backlogBaseUrl = getBacklogBaseUrl();
-  } catch (error) {
-    return jsonError(
-      getErrorMessage(error, "Backlog base URL is not configured"),
-      HTTP_STATUS.internalServerError,
-    );
-  }
-
   const {
-    backlog: { projectId, designDocumentId, apiKey: backlogApiKey },
+    backlog: { baseUrl: backlogBaseUrl, projectId, designDocumentId, apiKey: backlogApiKey },
     openAi: { apiKey: openAiApiKey },
   } = parseResult.data;
 
