@@ -188,6 +188,43 @@ describe("BacklogClient", () => {
     expect(document.content).toBe("");
   });
 
+  it("fetches content from the dedicated endpoint when metadata lacks it", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = new URL(String(input));
+
+      if (url.pathname.endsWith("/documents/55")) {
+        return createJsonResponse({
+          id: 55,
+          projectId: 9,
+          name: "Metadata only",
+        });
+      }
+
+      if (url.pathname.endsWith("/documents/55/content")) {
+        return createJsonResponse({
+          bodyHTML: "<p>Document body</p>",
+        });
+      }
+
+      if (url.pathname.endsWith("/documents/55/children")) {
+        return createJsonResponse([]);
+      }
+
+      throw new Error(`Unexpected request to ${url.pathname}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new BacklogClient({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "secret",
+    });
+
+    const document = await client.fetchDocumentTree(55);
+
+    expect(document.content).toBe("<p>Document body</p>");
+  });
+
   it("supports the helper function", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
