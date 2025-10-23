@@ -10,6 +10,10 @@ export default defineConfig({
     include: ["tests/**/*.{test,spec}.{ts,tsx}"],
     globals: true,
   },
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "react",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),

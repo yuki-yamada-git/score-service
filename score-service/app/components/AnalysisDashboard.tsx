@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import { ConfigurationForm } from "@/app/components/ConfigurationForm";
 import { DesignReviewResult } from "@/app/components/DesignReviewResult";
