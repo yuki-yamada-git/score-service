@@ -37,16 +37,31 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const {
-    backlog: { baseUrl: backlogBaseUrl, projectId, designDocumentId, apiKey: backlogApiKey },
+    backlog: {
+      baseUrl: backlogBaseUrl,
+      projectId,
+      designDocumentId,
+      requirementsDocumentId,
+      apiKey: backlogApiKey,
+    },
     openAi: { apiKey: openAiApiKey },
   } = parseResult.data;
+
+  const documentId = designDocumentId ?? requirementsDocumentId;
+
+  if (!documentId) {
+    return jsonError(
+      "Either Design document ID or Requirements document ID is required",
+      HTTP_STATUS.badRequest,
+    );
+  }
 
   let documentTree: BacklogDocumentTreeNode;
   try {
     documentTree = await fetchBacklogDocumentTree({
       baseUrl: backlogBaseUrl,
       apiKey: backlogApiKey,
-      documentId: designDocumentId,
+      documentId,
     });
   } catch (error) {
     return jsonError(

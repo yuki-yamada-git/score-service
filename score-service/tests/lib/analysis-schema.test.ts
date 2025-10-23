@@ -23,6 +23,40 @@ describe("analysis schemas", () => {
     expect(parsed.backlog.requirementsDocumentId).toBe("DOC-7890");
   });
 
+  it("accepts requests when at least one document ID is provided", () => {
+    const parsed = analysisRequestSchema.parse({
+      backlog: {
+        baseUrl: "https://example.backlog.com",
+        projectId: "PRJ-00123",
+        designDocumentId: "DOC-123",
+        apiKey: "backlog-key",
+      },
+      openAi: {
+        apiKey: "openai-key",
+      },
+    });
+
+    expect(parsed.backlog.designDocumentId).toBe("DOC-123");
+    expect(parsed.backlog.requirementsDocumentId).toBeUndefined();
+
+    const parsedWithRequirements = analysisRequestSchema.parse({
+      backlog: {
+        baseUrl: "https://example.backlog.com",
+        projectId: "PRJ-00123",
+        requirementsDocumentId: "REQ-456",
+        apiKey: "backlog-key",
+      },
+      openAi: {
+        apiKey: "openai-key",
+      },
+    });
+
+    expect(parsedWithRequirements.backlog.designDocumentId).toBeUndefined();
+    expect(parsedWithRequirements.backlog.requirementsDocumentId).toBe(
+      "REQ-456",
+    );
+  });
+
   it("rejects requests when required fields are missing", () => {
     const result = analysisRequestSchema.safeParse({
       backlog: {
@@ -35,8 +69,9 @@ describe("analysis schemas", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       const issues = result.error.issues.map((issue) => issue.message);
-      expect(issues).toContain("Design document ID is required");
-      expect(issues).toContain("Requirements document ID is required");
+      expect(issues).toContain(
+        "Either Design document ID or Requirements document ID is required",
+      );
       expect(issues).toContain("Backlog API key is required");
       expect(issues).toContain("OpenAI API key is required");
     }
