@@ -3,23 +3,14 @@
 import { useCallback, useState } from "react";
 
 import { ConfigurationForm } from "@/app/components/ConfigurationForm";
-import {
-  INITIAL_VALUES,
-  type ConfigurationFieldId,
-} from "@/app/lib/configuration-form";
 import { DesignReviewResult } from "@/app/components/DesignReviewResult";
 import {
-  buildPreview,
   INITIAL_VALUES,
   type ConfigurationFieldId,
 } from "@/app/lib/configuration-form";
 import type { DesignReviewResult as DesignReviewResultType } from "@/app/lib/design-review";
 
 type ConfigurationValues = Record<ConfigurationFieldId, string>;
-
-type AnalysisResponsePayload = {
-  result: DesignReviewResultType;
-};
 
 const GENERIC_ERROR_MESSAGE = "分析に失敗しました。時間を置いて再度お試しください。";
 
@@ -50,8 +41,15 @@ export function AnalysisDashboard() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          configuration: configurationValues,
-          preview: buildPreview(configurationValues),
+          backlog: {
+            projectId: configurationValues.backlogProjectId,
+            designDocumentId: configurationValues.designDocumentId,
+            requirementsDocumentId: configurationValues.requirementsDocumentId,
+            apiKey: configurationValues.backlogApiKey,
+          },
+          openAi: {
+            apiKey: configurationValues.openAiApiKey,
+          },
         }),
       });
 
@@ -59,8 +57,8 @@ export function AnalysisDashboard() {
         throw new Error(`Request failed with status ${response.status}`);
       }
 
-      const payload = (await response.json()) as AnalysisResponsePayload;
-      setReviewResult(payload.result);
+      const result = (await response.json()) as DesignReviewResultType;
+      setReviewResult(result);
       setErrorMessage(null);
     } catch (error) {
       console.error("Failed to start analysis", error);

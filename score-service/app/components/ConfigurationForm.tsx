@@ -52,7 +52,7 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
   const importTextAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
-  const preview = useMemo<PreviewState>(() => buildPreview(value), [value]);
+  const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
 
   useEffect(() => {
     setValues((current) => {
@@ -74,9 +74,19 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
 
   // 各入力フィールドの変更を受け取り、対応する値を更新する。
   const handleChange = (fieldId: ConfigurationFieldId, nextValue: string) => {
-    onChange({
-      ...value,
-      [fieldId]: nextValue,
+    setValues((current) => {
+      if (current[fieldId] === nextValue) {
+        return current;
+      }
+
+      const nextValues = {
+        ...current,
+        [fieldId]: nextValue,
+      };
+
+      setHasCopied(false);
+
+      return nextValues;
     });
   };
 
@@ -168,7 +178,7 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
               onChange={(event) => handleChange(field.id, event.target.value)}
               placeholder={field.placeholder}
               type={field.type ?? "text"}
-              value={value[field.id]}
+              value={values[field.id]}
             />
             {field.description ? (
               <span className="text-xs text-slate-400">{field.description}</span>
