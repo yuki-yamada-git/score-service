@@ -12,10 +12,10 @@ export type BacklogClientOptions = {
   /** Backlog の個人 API キー。 */
   apiKey: string;
   /**
-   * Backlog のプロジェクト識別子。`projectIdOrKey` としてクエリに付与される。
+   * Backlog のプロジェクト識別子。URL の `projects/{projectIdOrKey}` に利用する。
    * 例: "PRJ" や "123"
    */
-  projectIdOrKey?: string;
+  projectIdOrKey: string;
 };
 
 /**
@@ -123,7 +123,7 @@ export type FetchBacklogDocumentTreeOptions = {
 export class BacklogClient {
   private readonly baseApiUrl: URL;
   private readonly apiKey: string;
-  private readonly projectIdOrKey?: string;
+  private readonly projectIdOrKey: string;
 
   constructor({ baseUrl, apiKey, projectIdOrKey }: BacklogClientOptions) {
     if (!baseUrl) {
@@ -134,10 +134,14 @@ export class BacklogClient {
       throw new Error("Backlog API key is required");
     }
 
+    if (!projectIdOrKey?.trim()) {
+      throw new Error("Backlog projectIdOrKey is required");
+    }
+
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
     this.baseApiUrl = new URL("api/v2/", normalizedBase);
     this.apiKey = apiKey;
-    this.projectIdOrKey = projectIdOrKey?.trim() || undefined;
+    this.projectIdOrKey = projectIdOrKey.trim();
   }
 
   /**
@@ -203,7 +207,7 @@ export class BacklogClient {
 
   private async fetchDocument(documentId: string): Promise<BacklogDocument> {
     const response = await this.request<BacklogDocumentResponse>(
-      `documents/${documentId}`,
+      this.buildDocumentPath(documentId),
     );
 
     // Document (Beta) では本文が `content` だけでなく `body` や `bodyHTML`
@@ -231,7 +235,7 @@ export class BacklogClient {
     documentId: string,
   ): Promise<string | null | undefined> {
     const response = await this.request<BacklogDocumentContentResponse>(
-      `documents/${documentId}/content`,
+      this.buildDocumentPath(documentId, "content"),
     );
 
     return pickDocumentContent(response);
@@ -241,7 +245,7 @@ export class BacklogClient {
     documentId: string,
   ): Promise<BacklogDocumentChild[]> {
     const children = await this.request<BacklogDocumentChild[]>(
-      `documents/${documentId}/children`,
+      this.buildDocumentPath(documentId, "children"),
     );
     if (!Array.isArray(children)) {
       return [];
@@ -257,9 +261,6 @@ export class BacklogClient {
   private async request<T>(path: string): Promise<T> {
     const url = new URL(path.replace(/^\//, ""), this.baseApiUrl);
     url.searchParams.set("apiKey", this.apiKey);
-    if (this.projectIdOrKey) {
-      url.searchParams.set("projectIdOrKey", this.projectIdOrKey);
-    }
 
     let response: Response;
     try {
@@ -283,6 +284,11 @@ export class BacklogClient {
     }
 
     return (await response.json()) as T;
+  }
+
+  private buildDocumentPath(documentId: string, suffix?: string): string {
+    const normalizedSuffix = suffix ? `/${suffix}` : "";
+    return `projects/${this.projectIdOrKey}/documents/${documentId}${normalizedSuffix}`;
   }
 }
 
