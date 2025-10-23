@@ -55,7 +55,20 @@ export function AnalysisDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        let message = GENERIC_ERROR_MESSAGE;
+
+        try {
+          const payload = (await response.json()) as { error?: unknown };
+          if (payload && typeof payload.error === "string" && payload.error.trim()) {
+            message = payload.error;
+          }
+        } catch (parseError) {
+          console.error("Failed to parse analysis error response", parseError);
+        }
+
+        setErrorMessage(message);
+        setReviewResult(null);
+        return;
       }
 
       const result = (await response.json()) as DesignReviewResultType;
@@ -63,6 +76,7 @@ export function AnalysisDashboard() {
       setErrorMessage(null);
     } catch (error) {
       console.error("Failed to start analysis", error);
+      setReviewResult(null);
       setErrorMessage(GENERIC_ERROR_MESSAGE);
     } finally {
       setIsAnalyzing(false);
