@@ -31,8 +31,13 @@ export function AnalysisDashboard() {
       return;
     }
 
-    setIsAnalyzing(true);
     setErrorMessage(null);
+    setIsAnalyzing(true);
+
+    const backlogProjectId = configurationValues.backlogProjectId.trim();
+    const designDocumentId = configurationValues.designDocumentId.trim();
+    const requirementsDocumentId =
+      configurationValues.requirementsDocumentId.trim();
 
     try {
       const response = await fetch("/api/analysis", {
@@ -43,9 +48,9 @@ export function AnalysisDashboard() {
         body: JSON.stringify({
           backlog: {
             baseUrl: configurationValues.backlogBaseUrl,
-            projectId: configurationValues.backlogProjectId,
-            designDocumentId: configurationValues.designDocumentId,
-            requirementsDocumentId: configurationValues.requirementsDocumentId,
+            projectId: backlogProjectId,
+            designDocumentId,
+            requirementsDocumentId,
             apiKey: configurationValues.backlogApiKey,
           },
           openAi: {
@@ -55,7 +60,20 @@ export function AnalysisDashboard() {
       });
 
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
+        let message = GENERIC_ERROR_MESSAGE;
+
+        try {
+          const payload = (await response.json()) as { error?: unknown };
+          if (payload && typeof payload.error === "string" && payload.error.trim()) {
+            message = payload.error;
+          }
+        } catch (parseError) {
+          console.error("Failed to parse analysis error response", parseError);
+        }
+
+        setErrorMessage(message);
+        setReviewResult(null);
+        return;
       }
 
       const payload = (await response.json()) as {
@@ -70,6 +88,7 @@ export function AnalysisDashboard() {
       setErrorMessage(null);
     } catch (error) {
       console.error("Failed to start analysis", error);
+      setReviewResult(null);
       setErrorMessage(GENERIC_ERROR_MESSAGE);
       setReviewResult(null);
     } finally {

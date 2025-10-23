@@ -156,7 +156,7 @@ describe("BacklogClient", () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
 
-      if (url.pathname.endsWith("/documents/5")) {
+      if (url.pathname.endsWith("/documents/DOC-5")) {
         return createJsonResponse({
           id: 5,
           projectId: 42,
@@ -165,7 +165,7 @@ describe("BacklogClient", () => {
         });
       }
 
-      if (url.pathname.endsWith("/documents/5/children")) {
+      if (url.pathname.endsWith("/documents/DOC-5/children")) {
         return createJsonResponse([]);
       }
 
@@ -177,29 +177,33 @@ describe("BacklogClient", () => {
     const tree = await fetchBacklogDocumentTree({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
-      documentId: 5,
+      documentId: "DOC-5",
     });
 
     expect(tree.children).toHaveLength(0);
     expect(tree.name).toBe("Single");
   });
 
-  it("requires a positive integer document id", async () => {
+  it("requires a valid document id", async () => {
     const client = new BacklogClient({
       baseUrl: "https://example.backlog.com",
       apiKey: "secret",
     });
 
     await expect(client.fetchDocumentTree(0)).rejects.toThrow(
-      "documentId must be a positive integer",
+      "documentId must be a positive integer or a non-empty string",
     );
 
     await expect(client.fetchDocumentTree(-10)).rejects.toThrow(
-      "documentId must be a positive integer",
+      "documentId must be a positive integer or a non-empty string",
     );
 
     await expect(client.fetchDocumentTree(1.5)).rejects.toThrow(
-      "documentId must be a positive integer",
+      "documentId must be a positive integer or a non-empty string",
+    );
+
+    await expect(client.fetchDocumentTree(" ")).rejects.toThrow(
+      "documentId must be a positive integer or a non-empty string",
     );
   });
 });

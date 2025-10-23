@@ -119,35 +119,34 @@ export class BacklogClient {
    * 指定したドキュメント ID を起点に木構造を取得する。
    */
   async fetchDocumentTree(
-    documentId: number,
+    documentId: string | number,
     options: FetchBacklogDocumentTreeOptions = {},
   ): Promise<BacklogDocumentTreeNode> {
-    const visited = new Set<number>();
+    const visited = new Set<string>();
     const maxDepth = options.maxDepth ?? Number.POSITIVE_INFINITY;
-
-    if (!Number.isInteger(documentId) || documentId <= 0) {
-      throw new Error("documentId must be a positive integer");
-    }
+    const normalizedDocumentId = normalizeDocumentId(documentId);
 
     if (maxDepth < 0) {
       throw new Error("maxDepth must be greater than or equal to 0");
     }
 
-    return this.buildTree(documentId, visited, 0, maxDepth);
+    return this.buildTree(normalizedDocumentId, visited, 0, maxDepth);
   }
 
   private async buildTree(
-    documentId: number,
-    visited: Set<number>,
+    documentId: string,
+    visited: Set<string>,
     depth: number,
     maxDepth: number,
     childSummary?: BacklogDocumentChild,
   ): Promise<BacklogDocumentTreeNode> {
-    if (visited.has(documentId)) {
+    const cacheKey = documentId;
+
+    if (visited.has(cacheKey)) {
       throw new Error(`Detected circular reference for document ${documentId}`);
     }
 
-    visited.add(documentId);
+    visited.add(cacheKey);
 
     try {
       const document = await this.fetchDocument(documentId);
@@ -157,7 +156,13 @@ export class BacklogClient {
         const childSummaries = await this.fetchDocumentChildren(documentId);
         children = await Promise.all(
           childSummaries.map((child) =>
-            this.buildTree(child.id, visited, depth + 1, maxDepth, child),
+            this.buildTree(
+              normalizeDocumentId(child.id),
+              visited,
+              depth + 1,
+              maxDepth,
+              child,
+            ),
           ),
         );
       }
@@ -167,11 +172,11 @@ export class BacklogClient {
         children,
       };
     } finally {
-      visited.delete(documentId);
+      visited.delete(cacheKey);
     }
   }
 
-  private async fetchDocument(documentId: number): Promise<BacklogDocument> {
+  private async fetchDocument(documentId: string): Promise<BacklogDocument> {
     const response = await this.request<BacklogDocument>(`documents/${documentId}`);
 
     if (!response.content) {
@@ -181,7 +186,9 @@ export class BacklogClient {
     return response;
   }
 
-  private async fetchDocumentChildren(documentId: number): Promise<BacklogDocumentChild[]> {
+  private async fetchDocumentChildren(
+    documentId: string,
+  ): Promise<BacklogDocumentChild[]> {
     const children = await this.request<BacklogDocumentChild[]>(
       `documents/${documentId}/children`,
     );
@@ -226,7 +233,7 @@ export class BacklogClient {
  */
 export async function fetchBacklogDocumentTree(
   options: BacklogClientOptions & {
-    documentId: number;
+    documentId: string | number;
     treeOptions?: FetchBacklogDocumentTreeOptions;
   },
 ): Promise<BacklogDocumentTreeNode> {
@@ -236,4 +243,30 @@ export async function fetchBacklogDocumentTree(
   });
 
   return client.fetchDocumentTree(options.documentId, options.treeOptions);
+}
+
+function normalizeDocumentId(documentId: string | number): string {
+  if (typeof documentId === "number") {
+    if (!Number.isInteger(documentId) || documentId <= 0) {
+      throw new Error(
+        "documentId must be a positive integer or a non-empty string",
+      );
+    }
+
+    return String(documentId);
+  }
+
+  if (typeof documentId === "string") {
+    const trimmed = documentId.trim();
+
+    if (!trimmed) {
+      throw new Error(
+        "documentId must be a positive integer or a non-empty string",
+      );
+    }
+
+    return trimmed;
+  }
+
+  throw new Error("documentId must be a string or number");
 }

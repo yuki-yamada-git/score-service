@@ -4,13 +4,13 @@ import { analysisRequestSchema, analysisResponseSchema } from "@/app/lib/analysi
 import { MOCK_DESIGN_REVIEW_RESULT } from "@/app/lib/sample-review";
 
 describe("analysis schemas", () => {
-  it("parses numeric identifier strings into numbers", () => {
+  it("normalizes identifier inputs to trimmed strings", () => {
     const parsed = analysisRequestSchema.parse({
       backlog: {
         baseUrl: "https://example.backlog.com",
-        projectId: "00123",
+        projectId: "  PRJ-00123  ",
         designDocumentId: 456,
-        requirementsDocumentId: "7890",
+        requirementsDocumentId: "  DOC-7890  ",
         apiKey: "backlog-key",
       },
       openAi: {
@@ -18,9 +18,9 @@ describe("analysis schemas", () => {
       },
     });
 
-    expect(parsed.backlog.projectId).toBe(123);
-    expect(parsed.backlog.designDocumentId).toBe(456);
-    expect(parsed.backlog.requirementsDocumentId).toBe(7890);
+    expect(parsed.backlog.projectId).toBe("PRJ-00123");
+    expect(parsed.backlog.designDocumentId).toBe("456");
+    expect(parsed.backlog.requirementsDocumentId).toBe("DOC-7890");
   });
 
   it("rejects requests when required fields are missing", () => {

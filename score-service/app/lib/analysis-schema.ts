@@ -9,11 +9,7 @@ import type {
   DesignReviewSection,
 } from "@/app/lib/design-review";
 
-const SAFE_INTEGER_MAX = Number.MAX_SAFE_INTEGER;
-
-const NUMERIC_ID_PATTERN = /^\d+$/u;
-
-const createNumericIdSchema = (label: string) =>
+const createIdentifierSchema = (label: string) =>
   z.preprocess(
     (input) => {
       if (typeof input === "string") {
@@ -23,23 +19,21 @@ const createNumericIdSchema = (label: string) =>
           return undefined;
         }
 
-        if (NUMERIC_ID_PATTERN.test(trimmed)) {
-          return Number.parseInt(trimmed, 10);
-        }
+        return trimmed;
+      }
 
-        return input;
+      if (typeof input === "number" && Number.isFinite(input)) {
+        return String(input);
       }
 
       return input;
     },
     z
-      .number({
+      .string({
         required_error: `${label} is required`,
-        invalid_type_error: `${label} must be a positive integer`,
+        invalid_type_error: `${label} must be a string`,
       })
-      .int(`${label} must be a positive integer`)
-      .positive(`${label} must be a positive integer`)
-      .max(SAFE_INTEGER_MAX, `${label} must be within the safe integer range`),
+      .min(1, `${label} is required`),
   );
 
 const createNonEmptyStringSchema = (label: string) =>
@@ -97,9 +91,9 @@ const createBacklogBaseUrlSchema = () =>
 
 const backlogRequestSchema = z.object({
   baseUrl: createBacklogBaseUrlSchema(),
-  projectId: createNumericIdSchema("Backlog project ID"),
-  designDocumentId: createNumericIdSchema("Design document ID"),
-  requirementsDocumentId: createNumericIdSchema("Requirements document ID"),
+  projectId: createIdentifierSchema("Backlog project ID"),
+  designDocumentId: createIdentifierSchema("Design document ID"),
+  requirementsDocumentId: createIdentifierSchema("Requirements document ID"),
   apiKey: createNonEmptyStringSchema("Backlog API key"),
 });
 
