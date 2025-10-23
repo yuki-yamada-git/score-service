@@ -97,21 +97,43 @@ const backlogRequestSchema = z
     requirementsDocumentId: createIdentifierSchema(
       "Requirements document ID",
     ).optional(),
-    apiKey: createNonEmptyStringSchema("Backlog API key"),
+    apiKey: createNonEmptyStringSchema("Backlog API key").optional(),
   })
-  .superRefine(({ designDocumentId, requirementsDocumentId }, ctx) => {
-    if (!designDocumentId && !requirementsDocumentId) {
+  .superRefine((value, ctx) => {
+    const hasDesignDocumentId = Boolean(value.designDocumentId);
+    const hasRequirementsDocumentId = Boolean(value.requirementsDocumentId);
+
+    if (!hasDesignDocumentId && !hasRequirementsDocumentId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Either Design document ID or Requirements document ID is required",
+        message:
+          "Either Design document ID or Requirements document ID is required",
         path: ["designDocumentId"],
+      });
+    }
+
+    if (!value.apiKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Backlog API key is required",
+        path: ["apiKey"],
       });
     }
   });
 
-const openAiRequestSchema = z.object({
-  apiKey: createNonEmptyStringSchema("OpenAI API key"),
-});
+const openAiRequestSchema = z
+  .object({
+    apiKey: createNonEmptyStringSchema("OpenAI API key").optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.apiKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "OpenAI API key is required",
+        path: ["apiKey"],
+      });
+    }
+  });
 
 export const analysisRequestSchema = z.object({
   backlog: backlogRequestSchema,
