@@ -6,6 +6,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
