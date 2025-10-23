@@ -99,23 +99,14 @@ const backlogRequestSchema = z
     ).optional(),
     apiKey: createNonEmptyStringSchema("Backlog API key"),
   })
-  .superRefine(({ designDocumentId, requirementsDocumentId }, ctx) => {
-    if (!designDocumentId && !requirementsDocumentId) {
-      const message =
-        "Either Design document ID or Requirements document ID is required";
-
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["designDocumentId"],
-        message,
-      });
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["requirementsDocumentId"],
-        message,
-      });
-    }
-  });
+  .refine(
+    ({ designDocumentId, requirementsDocumentId }) =>
+      Boolean(designDocumentId || requirementsDocumentId),
+    {
+      message: "Either Design document ID or Requirements document ID is required",
+      path: ["designDocumentId"],
+    },
+  );
 
 const openAiRequestSchema = z.object({
   apiKey: createNonEmptyStringSchema("OpenAI API key"),
