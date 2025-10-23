@@ -58,12 +58,20 @@ export function AnalysisDashboard() {
         throw new Error(`Request failed with status ${response.status}`);
       }
 
-      const result = (await response.json()) as DesignReviewResultType;
-      setReviewResult(result);
+      const payload = (await response.json()) as {
+        result?: DesignReviewResultType;
+      };
+
+      if (!payload?.result) {
+        throw new Error("Analysis result was not found in the response body");
+      }
+
+      setReviewResult(payload.result);
       setErrorMessage(null);
     } catch (error) {
       console.error("Failed to start analysis", error);
       setErrorMessage(GENERIC_ERROR_MESSAGE);
+      setReviewResult(null);
     } finally {
       setIsAnalyzing(false);
     }
