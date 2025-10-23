@@ -97,7 +97,7 @@ const backlogRequestSchema = z
     requirementsDocumentId: createIdentifierSchema(
       "Requirements document ID",
     ).optional(),
-    apiKey: createNonEmptyStringSchema("Backlog API key").optional(),
+    apiKey: createNonEmptyStringSchema("Backlog API key"),
   })
   .superRefine((value, ctx) => {
     const hasDesignDocumentId = Boolean(value.designDocumentId);
@@ -123,7 +123,7 @@ const backlogRequestSchema = z
 
 const openAiRequestSchema = z
   .object({
-    apiKey: createNonEmptyStringSchema("OpenAI API key").optional(),
+    apiKey: createNonEmptyStringSchema("OpenAI API key"),
   })
   .superRefine((value, ctx) => {
     if (!value.apiKey) {
