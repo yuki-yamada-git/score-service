@@ -14,6 +14,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "."),
       "next/image": path.resolve(__dirname, "tests/mocks/next-image.tsx"),
+      "@testing-library/react": path.resolve(
+        __dirname,
+        "tests/mocks/testing-library-react.ts",
+      ),
     },
   },
 });

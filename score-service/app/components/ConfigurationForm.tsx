@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   FIELD_DEFINITIONS,
@@ -12,6 +12,14 @@ import {
 } from "@/app/lib/configuration-form";
 import { copyTextToClipboard } from "@/app/lib/copy-to-clipboard";
 
+type ConfigurationFormProps = {
+  /**
+   * フォーム内で保持している値が更新された際に呼び出されるコールバック。
+   * プレビューの表示だけでなく、親コンポーネントからも入力値を参照できるようにする。
+   */
+  onValuesChange?: (values: Record<ConfigurationFieldId, string>) => void;
+};
+
 const IMPORT_PLACEHOLDER = `{
   "backlog": {
     ...
@@ -21,7 +29,7 @@ const IMPORT_PLACEHOLDER = `{
   }
 }`;
 
-export function ConfigurationForm() {
+export function ConfigurationForm({ onValuesChange }: ConfigurationFormProps) {
   const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
     ...INITIAL_VALUES,
   });
@@ -33,6 +41,14 @@ export function ConfigurationForm() {
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
   const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
+
+  useEffect(() => {
+    if (!onValuesChange) {
+      return;
+    }
+
+    onValuesChange({ ...values });
+  }, [onValuesChange, values]);
 
   // 各入力フィールドの変更を受け取り、対応する値を更新する。
   const handleChange = (fieldId: ConfigurationFieldId, nextValue: string) => {

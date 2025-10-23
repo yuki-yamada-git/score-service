@@ -10,7 +10,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "next/image": ["tests/mocks/next-image"]
+      "next/image": ["tests/mocks/next-image"],
+      "@testing-library/react": ["tests/mocks/testing-library-react"]
     }
   },
   "include": [
