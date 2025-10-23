@@ -25,10 +25,6 @@ export function AnalysisDashboard() {
           <h1 className="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">
             連携設定のセットアップ
           </h1>
-          <p className="mx-auto max-w-2xl text-base text-slate-300 sm:mx-0">
-            Backlog と OpenAI を接続するために必要な情報を入力してください。今は保存や通信は行われませんが、入力内容を JSON
-            としてコピーできるので、実装が揃ったときにそのまま利用できます。
-          </p>
         </header>
 
         <ConfigurationForm />
