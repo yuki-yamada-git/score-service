@@ -127,11 +127,15 @@ describe("BacklogClient", () => {
 
     expect(tree).toEqual(expected);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v2/documents/1?apiKey=secret"),
+    const requestedUrls = fetchMock.mock.calls.map(([input]) =>
+      input instanceof URL ? input.href : String(input),
     );
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v2/documents/1/children?apiKey=secret"),
+
+    expect(requestedUrls).toContain(
+      "https://example.backlog.com/api/v2/documents/1?apiKey=secret",
+    );
+    expect(requestedUrls).toContain(
+      "https://example.backlog.com/api/v2/documents/1/children?apiKey=secret",
     );
   });
 
