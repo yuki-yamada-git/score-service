@@ -304,6 +304,48 @@ describe("BacklogClient", () => {
     expect(document.content).toBe("<p>Document body</p>");
   });
 
+  it("URL エンコード済みのドキュメント ID でリクエストする", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = new URL(String(input));
+
+      if (url.pathname === "/api/v2/projects/PRJ/documents/DOC%205") {
+        return createJsonResponse({
+          id: 5,
+          projectId: 42,
+          name: "Encoded",
+          content: "Encoded content",
+        });
+      }
+
+      if (url.pathname === "/api/v2/projects/PRJ/documents/DOC%205/children") {
+        return createJsonResponse([]);
+      }
+
+      throw new Error(`Unexpected request to ${url.pathname}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new BacklogClient({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "secret",
+      projectIdOrKey: "PRJ",
+    });
+
+    const document = await client.fetchDocumentTree(" DOC 5 ");
+
+    expect(document.name).toBe("Encoded");
+    expect(document.children).toHaveLength(0);
+
+    const requestedUrls = fetchMock.mock.calls.map(([input]) => String(input));
+    expect(requestedUrls).toContain(
+      "https://example.backlog.com/api/v2/projects/PRJ/documents/DOC%205?apiKey=secret",
+    );
+    expect(requestedUrls).toContain(
+      "https://example.backlog.com/api/v2/projects/PRJ/documents/DOC%205/children?apiKey=secret",
+    );
+  });
+
   it("supports the helper function", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
