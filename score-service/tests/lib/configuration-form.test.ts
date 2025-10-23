@@ -4,6 +4,7 @@ import {
   FIELD_DEFINITIONS,
   INITIAL_VALUES,
   buildPreview,
+  parseConfigurationJson,
   type ConfigurationFieldId,
 } from "@/app/lib/configuration-form";
 
@@ -48,5 +49,47 @@ describe("configuration-form utilities", () => {
         openAiApiKey: "",
       }),
     ).toEqual({ backlog: {}, openAi: {} });
+  });
+
+  it("parses JSON text into form values", () => {
+    const jsonText = JSON.stringify(
+      {
+        backlog: {
+          projectId: 999,
+          designDocumentId: "456",
+          requirementsDocumentId: "789",
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
+      },
+      null,
+      2,
+    );
+
+    expect(parseConfigurationJson(jsonText)).toEqual({
+      backlogProjectId: "999",
+      designDocumentId: "456",
+      requirementsDocumentId: "789",
+      backlogApiKey: "backlog-key",
+      openAiApiKey: "openai-key",
+    });
+  });
+
+  it("returns null when JSON cannot be parsed", () => {
+    expect(parseConfigurationJson("{")).toBeNull();
+  });
+
+  it("returns null when JSON lacks recognized sections", () => {
+    expect(parseConfigurationJson("{}")).toBeNull();
+  });
+
+  it("returns initial values when sections are present but empty", () => {
+    const parsed = parseConfigurationJson(
+      JSON.stringify({ backlog: {}, openAi: {} }),
+    );
+
+    expect(parsed).toEqual(INITIAL_VALUES);
   });
 });
