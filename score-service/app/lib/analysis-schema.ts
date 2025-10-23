@@ -51,7 +51,52 @@ const createNonEmptyStringSchema = (label: string) =>
     .trim()
     .min(1, `${label} is required`);
 
+const createBacklogBaseUrlSchema = () =>
+  z
+    .string({
+      required_error: "Backlog base URL is required",
+      invalid_type_error: "Backlog base URL must be a string",
+    })
+    .trim()
+    .min(1, "Backlog base URL is required")
+    .transform((value, ctx) => {
+      let parsed: URL;
+
+      try {
+        parsed = new URL(value);
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Backlog base URL must be a valid URL",
+        });
+        return z.NEVER;
+      }
+
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Backlog base URL must use http or https",
+        });
+        return z.NEVER;
+      }
+
+      if (
+        (parsed.pathname && parsed.pathname !== "/") ||
+        parsed.search ||
+        parsed.hash
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Backlog base URL must not include a path, query, or fragment",
+        });
+        return z.NEVER;
+      }
+
+      return parsed.origin;
+    });
+
 const backlogRequestSchema = z.object({
+  baseUrl: createBacklogBaseUrlSchema(),
   projectId: createNumericIdSchema("Backlog project ID"),
   designDocumentId: createNumericIdSchema("Design document ID"),
   requirementsDocumentId: createNumericIdSchema("Requirements document ID"),

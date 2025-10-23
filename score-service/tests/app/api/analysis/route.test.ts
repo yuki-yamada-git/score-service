@@ -3,12 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const fetchBacklogDocumentTree = vi.fn();
 const generateDesignReviewPrompt = vi.fn();
 const requestOpenAiAnalysis = vi.fn();
+const mockSystemPrompt = "system-prompt";
 
 vi.mock("@/app/lib/backlog", () => ({
   fetchBacklogDocumentTree,
 }));
 
 vi.mock("@/app/lib/design-review-prompt", () => ({
+  DESIGN_REVIEW_SYSTEM_PROMPT: mockSystemPrompt,
   generateDesignReviewPrompt,
 }));
 
@@ -37,13 +39,8 @@ describe("POST /api/analysis", () => {
       body: JSON.stringify(body),
     });
 
-  beforeEach(() => {
-    process.env.BACKLOG_BASE_URL = "https://example.backlog.com";
-  });
-
   afterEach(() => {
     vi.clearAllMocks();
-    delete process.env.BACKLOG_BASE_URL;
   });
 
   it("returns the design review result when analysis succeeds", async () => {
@@ -56,10 +53,16 @@ describe("POST /api/analysis", () => {
 
     const response = await POST(
       createRequest({
-        backlogProjectId: "42",
-        designDocumentId: "101",
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: "42",
+          designDocumentId: "101",
+          requirementsDocumentId: "202",
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
       }),
     );
 
@@ -80,22 +83,27 @@ describe("POST /api/analysis", () => {
     expect(requestOpenAiAnalysis).toHaveBeenCalledWith({
       apiKey: "openai-key",
       prompt: "Prompt text",
+      systemPrompt: mockSystemPrompt,
     });
   });
 
   it("returns 400 when the request body is invalid", async () => {
     const response = await POST(
       createRequest({
-        designDocumentId: "101",
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: "101",
+        },
+        openAi: {},
       }),
     );
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-      error: "backlogProjectId must be a number",
-    });
+    const payload = (await response.json()) as { error: string };
+    expect(payload.error).toContain("Design document ID is required");
+    expect(payload.error).toContain("Requirements document ID is required");
+    expect(payload.error).toContain("Backlog API key is required");
+    expect(payload.error).toContain("OpenAI API key is required");
   });
 
   it("returns 502 when fetching the Backlog document tree fails", async () => {
@@ -105,10 +113,16 @@ describe("POST /api/analysis", () => {
 
     const response = await POST(
       createRequest({
-        backlogProjectId: 42,
-        designDocumentId: 101,
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: 42,
+          designDocumentId: 101,
+          requirementsDocumentId: 202,
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
       }),
     );
 
@@ -125,10 +139,16 @@ describe("POST /api/analysis", () => {
 
     const response = await POST(
       createRequest({
-        backlogProjectId: 42,
-        designDocumentId: 101,
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: 42,
+          designDocumentId: 101,
+          requirementsDocumentId: 202,
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
       }),
     );
 
@@ -146,34 +166,43 @@ describe("POST /api/analysis", () => {
 
     const response = await POST(
       createRequest({
-        backlogProjectId: 42,
-        designDocumentId: 101,
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "https://example.backlog.com",
+          projectId: 42,
+          designDocumentId: 101,
+          requirementsDocumentId: 202,
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
       }),
     );
 
     expect(response.status).toBe(502);
     await expect(response.json()).resolves.toEqual({
-      error: "OpenAI response was not valid JSON",
+      error: "OpenAI response must be valid JSON",
     });
   });
 
-  it("returns 500 when the Backlog base URL is not configured", async () => {
-    delete process.env.BACKLOG_BASE_URL;
-
+  it("returns 400 when the Backlog base URL is invalid", async () => {
     const response = await POST(
       createRequest({
-        backlogProjectId: 42,
-        designDocumentId: 101,
-        backlogApiKey: "backlog-key",
-        openAiApiKey: "openai-key",
+        backlog: {
+          baseUrl: "ftp://example.backlog.com", // invalid protocol
+          projectId: 42,
+          designDocumentId: 101,
+          requirementsDocumentId: 202,
+          apiKey: "backlog-key",
+        },
+        openAi: {
+          apiKey: "openai-key",
+        },
       }),
     );
 
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      error: "Backlog base URL is not configured",
-    });
+    expect(response.status).toBe(400);
+    const payload = (await response.json()) as { error: string };
+    expect(payload.error).toContain("Backlog base URL must use http or https");
   });
 });

@@ -1,28 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ConfigurationForm } from "@/app/components/ConfigurationForm";
+import { DesignReviewResult } from "@/app/components/DesignReviewResult";
 import {
   INITIAL_VALUES,
   type ConfigurationFieldId,
 } from "@/app/lib/configuration-form";
-import { DesignReviewResult } from "@/app/components/DesignReviewResult";
 import type { DesignReviewResult as DesignReviewResultType } from "@/app/lib/design-review";
-import { MOCK_DESIGN_REVIEW_RESULT } from "@/app/lib/sample-review";
+
+type ConfigurationValues = Record<ConfigurationFieldId, string>;
+
+const GENERIC_ERROR_MESSAGE = "分析に失敗しました。時間を置いて再度お試しください。";
 
 export function AnalysisDashboard() {
-  const [configurationValues, setConfigurationValues] = useState<
-    Record<ConfigurationFieldId, string>
-  >({
+  const [configurationValues, setConfigurationValues] = useState<ConfigurationValues>({
     ...INITIAL_VALUES,
   });
   const [reviewResult, setReviewResult] = useState<DesignReviewResultType | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleStartAnalysis = () => {
-    // TODO: OpenAI との連携実装後に、実際のレビュー結果で置き換える。
-    setReviewResult(MOCK_DESIGN_REVIEW_RESULT);
-  };
+  const handleConfigurationChange = useCallback((nextValues: ConfigurationValues) => {
+    setConfigurationValues({ ...nextValues });
+  }, []);
+
+  const handleStartAnalysis = useCallback(async () => {
+    if (isAnalyzing) {
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/analysis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          backlog: {
+            baseUrl: configurationValues.backlogBaseUrl,
+            projectId: configurationValues.backlogProjectId,
+            designDocumentId: configurationValues.designDocumentId,
+            requirementsDocumentId: configurationValues.requirementsDocumentId,
+            apiKey: configurationValues.backlogApiKey,
+          },
+          openAi: {
+            apiKey: configurationValues.openAiApiKey,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const result = (await response.json()) as DesignReviewResultType;
+      setReviewResult(result);
+      setErrorMessage(null);
+    } catch (error) {
+      console.error("Failed to start analysis", error);
+      setErrorMessage(GENERIC_ERROR_MESSAGE);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [configurationValues, isAnalyzing]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -36,20 +81,61 @@ export function AnalysisDashboard() {
           </h1>
         </header>
 
-        <ConfigurationForm value={configurationValues} onChange={setConfigurationValues} />
+        <ConfigurationForm
+          onValuesChange={handleConfigurationChange}
+          initialValues={configurationValues}
+        />
 
         <footer className="text-center text-xs text-slate-500 sm:text-left">
           入力した情報はこのページ内でのみ保持され、外部へ送信されません。
         </footer>
 
-        <div className="flex justify-center sm:justify-end">
-          <button
-            type="button"
-            className="rounded-lg bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-            onClick={handleStartAnalysis}
-          >
-            分析開始
-          </button>
+        <div className="space-y-3">
+          {errorMessage ? (
+            <div
+              role="alert"
+              className="rounded-lg border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"
+            >
+              {errorMessage}
+            </div>
+          ) : null}
+
+          <div className="flex justify-center sm:justify-end">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-lg bg-sky-500 px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-300"
+              onClick={handleStartAnalysis}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    aria-hidden
+                    className="h-4 w-4 animate-spin text-white"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  分析中...
+                </span>
+              ) : (
+                "分析開始"
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="pb-8">

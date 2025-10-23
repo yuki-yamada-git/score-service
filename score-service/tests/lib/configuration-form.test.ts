@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/configuration-form";
 
 const FILLED_VALUES: Record<ConfigurationFieldId, string> = {
+  backlogBaseUrl: "https://example.backlog.com",
   backlogProjectId: "123",
   designDocumentId: "456",
   requirementsDocumentId: "789",
@@ -28,6 +29,7 @@ describe("configuration-form utilities", () => {
   it("creates preview JSON with only filled values", () => {
     expect(buildPreview(FILLED_VALUES)).toEqual({
       backlog: {
+        baseUrl: "https://example.backlog.com",
         projectId: "123",
         designDocumentId: "456",
         requirementsDocumentId: "789",
@@ -42,6 +44,7 @@ describe("configuration-form utilities", () => {
   it("omits empty values from the preview JSON", () => {
     expect(
       buildPreview({
+        backlogBaseUrl: "",
         backlogProjectId: "",
         designDocumentId: "",
         requirementsDocumentId: "",
@@ -55,6 +58,7 @@ describe("configuration-form utilities", () => {
     const jsonText = JSON.stringify(
       {
         backlog: {
+          baseUrl: "https://example.backlog.com",
           projectId: 999,
           designDocumentId: "456",
           requirementsDocumentId: "789",
@@ -69,6 +73,7 @@ describe("configuration-form utilities", () => {
     );
 
     expect(parseConfigurationJson(jsonText)).toEqual({
+      backlogBaseUrl: "https://example.backlog.com",
       backlogProjectId: "999",
       designDocumentId: "456",
       requirementsDocumentId: "789",

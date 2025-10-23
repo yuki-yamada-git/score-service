@@ -7,6 +7,7 @@ describe("analysis schemas", () => {
   it("parses numeric identifier strings into numbers", () => {
     const parsed = analysisRequestSchema.parse({
       backlog: {
+        baseUrl: "https://example.backlog.com",
         projectId: "00123",
         designDocumentId: 456,
         requirementsDocumentId: "7890",
@@ -25,6 +26,7 @@ describe("analysis schemas", () => {
   it("rejects requests when required fields are missing", () => {
     const result = analysisRequestSchema.safeParse({
       backlog: {
+        baseUrl: "https://example.backlog.com",
         projectId: "100", // missing other required fields
       },
       openAi: {},
@@ -37,6 +39,29 @@ describe("analysis schemas", () => {
       expect(issues).toContain("Requirements document ID is required");
       expect(issues).toContain("Backlog API key is required");
       expect(issues).toContain("OpenAI API key is required");
+    }
+  });
+
+  it("rejects requests when the Backlog base URL is invalid", () => {
+    const result = analysisRequestSchema.safeParse({
+      backlog: {
+        baseUrl: "https://example.backlog.com/path", // contains path
+        projectId: "100",
+        designDocumentId: "200",
+        requirementsDocumentId: "300",
+        apiKey: "backlog-key",
+      },
+      openAi: {
+        apiKey: "openai-key",
+      },
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issues = result.error.issues.map((issue) => issue.message);
+      expect(issues).toContain(
+        "Backlog base URL must not include a path, query, or fragment",
+      );
     }
   });
 
