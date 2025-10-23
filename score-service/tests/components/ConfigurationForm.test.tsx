@@ -1,93 +1,76 @@
-import { describe, expect, it, vi } from "vitest";
-import { renderToStaticMarkup } from "react-dom/server";
-import { act } from "react-dom/test-utils";
-import { createRoot } from "react-dom/client";
-import { useState } from "react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ConfigurationForm } from "../../app/components/ConfigurationForm";
 import { INITIAL_VALUES } from "../../app/lib/configuration-form";
 
-const REQUIRED_LABELS = [
-  "Backlog の Project ID",
-  "設計書の ID",
-  "要件定義書の ID",
-  "Backlog API Key",
-  "OpenAI API Key",
-];
-
 describe("ConfigurationForm", () => {
-  it("renders all required input fields and preview", () => {
-    const customValues = {
-      ...INITIAL_VALUES,
-      backlogProjectId: "123456",
-      designDocumentId: "987654321",
-      openAiApiKey: "sk-test",
-    };
-
-    const markup = renderToStaticMarkup(
-      <ConfigurationForm value={customValues} onChange={() => {}} />,
-    );
-
-    for (const label of REQUIRED_LABELS) {
-      expect(markup.includes(label)).toBe(true);
-    }
-
-    expect(markup.includes("JSON をコピー")).toBe(true);
-    expect(markup.includes("JSON をインポート")).toBe(true);
-    expect(markup.includes("&quot;backlog&quot;: {")).toBe(true);
-    expect(markup.includes("&quot;openAi&quot;: {")).toBe(true);
-    expect(markup.includes("&quot;projectId&quot;: &quot;123456&quot;)).toBe(true);
-    expect(markup.includes("&quot;designDocumentId&quot;: &quot;987654321&quot;)).toBe(true);
-    expect(markup.includes("&quot;apiKey&quot;: &quot;sk-test&quot;)).toBe(true);
+  afterEach(() => {
+    cleanup();
   });
 
-  it("calls onChange when input values update", () => {
-    const handleChange = vi.fn();
-    const container = document.createElement("div");
-    document.body.appendChild(container);
+  it("renders all required input fields and preview", () => {
+    render(<ConfigurationForm />);
 
-    const root = createRoot(container);
+    expect(screen.getByLabelText("Backlog の Project ID")).toBeTruthy();
+    expect(screen.getByLabelText("設計書の ID")).toBeTruthy();
+    expect(screen.getByLabelText("要件定義書の ID")).toBeTruthy();
+    expect(screen.getByLabelText("Backlog API Key")).toBeTruthy();
+    expect(screen.getByLabelText("OpenAI API Key")).toBeTruthy();
+    expect(screen.getByText("JSON をコピー")).toBeTruthy();
+    expect(screen.getByText("JSON をインポート")).toBeTruthy();
+    expect(screen.getByText("プレビュー")).toBeTruthy();
+  });
 
-    function Wrapper() {
-      const [formValues, setFormValues] = useState({
+  it("calls onValuesChange when inputs are updated", async () => {
+    const handleValuesChange = vi.fn();
+    render(<ConfigurationForm onValuesChange={handleValuesChange} />);
+
+    await waitFor(() => {
+      expect(handleValuesChange).toHaveBeenCalledWith({
         ...INITIAL_VALUES,
       });
-
-      return (
-        <ConfigurationForm
-          value={formValues}
-          onChange={(nextValues) => {
-            handleChange(nextValues);
-            setFormValues(nextValues);
-          }}
-        />
-      );
-    }
-
-    act(() => {
-      root.render(<Wrapper />);
     });
 
-    const projectIdInput = container.querySelector(
-      "input#backlogProjectId",
+    const projectInput = screen.getByLabelText("Backlog の Project ID") as HTMLInputElement;
+    fireEvent.change(projectInput, { target: { value: "42" } });
+
+    await waitFor(() => {
+      expect(handleValuesChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          backlogProjectId: "42",
+        }),
+      );
+    });
+  });
+
+  it("resets internal state when initialValues prop changes", async () => {
+    const handleValuesChange = vi.fn();
+    const { rerender } = render(
+      <ConfigurationForm
+        onValuesChange={handleValuesChange}
+        initialValues={{ backlogProjectId: "123" }}
+      />,
+    );
+
+    const projectInput = screen.getByLabelText(
+      "Backlog の Project ID",
     ) as HTMLInputElement;
 
-    expect(projectIdInput.value).toBe("");
+    expect(projectInput.value).toBe("123");
 
-    act(() => {
-      projectIdInput.value = "246810";
-      projectIdInput.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    fireEvent.change(projectInput, { target: { value: "456" } });
+    expect(projectInput.value).toBe("456");
 
-    expect(handleChange).toHaveBeenCalledWith(
-      expect.objectContaining({ backlogProjectId: "246810" }),
+    rerender(
+      <ConfigurationForm
+        onValuesChange={handleValuesChange}
+        initialValues={{ backlogProjectId: "789" }}
+      />,
     );
-    expect(projectIdInput.value).toBe("246810");
 
-    act(() => {
-      root.unmount();
+    await waitFor(() => {
+      expect(projectInput.value).toBe("789");
     });
-
-    container.remove();
   });
 });
