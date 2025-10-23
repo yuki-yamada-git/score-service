@@ -169,11 +169,17 @@ function expectArray(value: unknown, path: string): unknown[] {
 }
 
 function expectString(value: unknown, path: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
+  if (typeof value !== "string") {
     throw new InvalidAnalysisResultError(`${path} must be a non-empty string`);
   }
 
-  return value;
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    throw new InvalidAnalysisResultError(`${path} must be a non-empty string`);
+  }
+
+  return trimmed;
 }
 
 function expectNumber(value: unknown, path: string): number {
