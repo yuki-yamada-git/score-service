@@ -44,6 +44,19 @@ export type BacklogTag = {
   name: string;
 };
 
+type BacklogDocumentContentFields = {
+  /**
+  * Backlog Document (Beta) では本文が複数のフィールドに分かれて返却される場合がある。
+  * content/shownContent は旧来のドキュメント API との互換フィールド、body/bodyHTML は Document (Beta) で利用される。
+   */
+  content?: string | null;
+  shownContent?: string | null;
+  body?: string | null;
+  bodyHTML?: string | null;
+  bodyHtml?: string | null;
+  htmlContent?: string | null;
+};
+
 export type BacklogDocument = {
   id: number;
   projectId: number;
@@ -62,7 +75,12 @@ export type BacklogDocument = {
   updated?: string;
   attachments?: BacklogAttachment[];
   stars?: BacklogStar[];
-};
+} & BacklogDocumentContentFields;
+
+type BacklogDocumentResponse = Omit<BacklogDocument, "content"> &
+  BacklogDocumentContentFields;
+
+type BacklogDocumentContentResponse = BacklogDocumentContentFields;
 
 /**
  * Backlog のドキュメントの子情報 (content を含まない簡易情報)。
@@ -177,13 +195,39 @@ export class BacklogClient {
   }
 
   private async fetchDocument(documentId: string): Promise<BacklogDocument> {
-    const response = await this.request<BacklogDocument>(`documents/${documentId}`);
+    const response = await this.request<BacklogDocumentResponse>(
+      `documents/${documentId}`,
+    );
 
-    if (response.content === undefined || response.content === null) {
+    // Document (Beta) では本文が `content` だけでなく `body` や `bodyHTML`
+    // として返るケースがあり、さらにメタデータ API では本文が含まれず
+    // `/content` エンドポイントを別途呼び出す必要がある。
+    // そのためレスポンスに含まれる複数の候補フィールドを確認し、
+    // いずれも欠落している場合は `/content` から再取得する。
+    const inlineContent = pickDocumentContent(response);
+    const content =
+      inlineContent !== undefined
+        ? inlineContent
+        : await this.fetchDocumentContent(documentId);
+
+    if (content === undefined || content === null) {
       throw new Error(`Backlog document ${documentId} did not contain content`);
     }
 
-    return response;
+    return {
+      ...response,
+      content,
+    } satisfies BacklogDocument;
+  }
+
+  private async fetchDocumentContent(
+    documentId: string,
+  ): Promise<string | null | undefined> {
+    const response = await this.request<BacklogDocumentContentResponse>(
+      `documents/${documentId}/content`,
+    );
+
+    return pickDocumentContent(response);
   }
 
   private async fetchDocumentChildren(
@@ -270,3 +314,25 @@ function normalizeDocumentId(documentId: string | number): string {
 
   throw new Error("documentId must be a string or number");
 }
+
+function pickDocumentContent(
+  source: BacklogDocumentContentFields,
+): string | null | undefined {
+  const candidates = [
+    source.content,
+    source.shownContent,
+    source.body,
+    source.bodyHTML,
+    source.bodyHtml,
+    source.htmlContent,
+  ];
+
+  for (const value of candidates) {
+    if (value !== undefined && value !== null) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
