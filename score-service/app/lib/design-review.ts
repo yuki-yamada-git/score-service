@@ -21,7 +21,11 @@ export type DesignReviewImprovement = {
   description: string;
 };
 
-export type DesignReviewResult = {
+export type DesignReviewDocumentResult = {
+  /**
+   * ドキュメント識別子。子ドキュメントを含む階層構造での key 用に利用する。
+   */
+  id: string;
   documentTitle: string;
   breadcrumbs: DesignReviewBreadcrumb[];
   totalScore: DesignReviewScore;
@@ -31,4 +35,13 @@ export type DesignReviewResult = {
   };
   sectionEvaluations: DesignReviewSection[];
   improvementSuggestions: DesignReviewImprovement[];
+  childDocuments: DesignReviewDocumentResult[];
+};
+
+export type DesignReviewResult = {
+  /**
+   * ルートドキュメント（全体ドキュメント）のレビュー結果。
+   * 子ドキュメントを通じて個別ドキュメントの評価が再帰的にぶら下がる。
+   */
+  rootDocument: DesignReviewDocumentResult;
 };

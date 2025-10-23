@@ -1,4 +1,7 @@
-import type { DesignReviewResult } from "@/app/lib/design-review";
+import type {
+  DesignReviewDocumentResult,
+  DesignReviewResult,
+} from "@/app/lib/design-review";
 
 type DesignReviewResultProps = {
   result: DesignReviewResult;
@@ -6,65 +9,90 @@ type DesignReviewResultProps = {
 
 export function DesignReviewResult({ result }: DesignReviewResultProps) {
   return (
-    <section className="space-y-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg ring-1 ring-white/5">
-      <header className="space-y-4">
-        <nav aria-label="ドキュメントの場所">
-          <ol className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-            {result.breadcrumbs.map((breadcrumb, index) => (
-              <li key={breadcrumb.label} className="flex items-center gap-2">
-                {index > 0 ? <span className="text-slate-600">&gt;</span> : null}
-                {breadcrumb.href ? (
-                  <a
-                    href={breadcrumb.href}
-                    className="rounded px-1 py-0.5 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
-                  >
-                    {breadcrumb.label}
-                  </a>
-                ) : (
-                  <span>{breadcrumb.label}</span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+    <div className="space-y-10">
+      <DocumentReviewPanel document={result.rootDocument} isRoot depth={0} />
+    </div>
+  );
+}
 
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-300">設計書レビュー</p>
-            <h2 className="text-2xl font-semibold text-slate-50 sm:text-3xl">
-              {result.documentTitle}
-            </h2>
-          </div>
+type DocumentReviewPanelProps = {
+  document: DesignReviewDocumentResult;
+  isRoot?: boolean;
+  depth: number;
+};
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-6 py-4 text-center">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">総点数</p>
-              <p className="text-3xl font-bold text-sky-400">
-                {result.totalScore.value}
-                <span className="ml-1 text-base font-medium text-slate-500">
-                  /{result.totalScore.max}
-                </span>
+function DocumentReviewPanel({ document, isRoot = false, depth }: DocumentReviewPanelProps) {
+  const containerClassName = isRoot
+    ? "space-y-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-lg ring-1 ring-white/5"
+    : "space-y-8 rounded-2xl border border-slate-900 bg-slate-950/60 p-6 shadow-lg ring-1 ring-white/5";
+
+  const titleClassName = isRoot
+    ? "text-2xl font-semibold text-slate-50 sm:text-3xl"
+    : "text-xl font-semibold text-slate-50";
+
+  return (
+    <div className="space-y-8">
+      <section className={containerClassName}>
+        <header className="space-y-4">
+          <nav aria-label="ドキュメントの場所">
+            <ol className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              {document.breadcrumbs.map((breadcrumb, index) => (
+                <li key={`${document.id}-${breadcrumb.label}`} className="flex items-center gap-2">
+                  {index > 0 ? <span className="text-slate-600">&gt;</span> : null}
+                  {breadcrumb.href ? (
+                    <a
+                      href={breadcrumb.href}
+                      className="rounded px-1 py-0.5 text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+                    >
+                      {breadcrumb.label}
+                    </a>
+                  ) : (
+                    <span>{breadcrumb.label}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-300">
+                {isRoot ? "全体レビュー" : "ドキュメントレビュー"}
               </p>
+              <h2 className={titleClassName}>{document.documentTitle}</h2>
             </div>
 
-            <div className="max-w-xs space-y-1 rounded-xl border border-slate-700 bg-slate-950/70 px-6 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">総評価</p>
-              <p className="text-sm font-semibold text-amber-300">{result.overallEvaluation.ratingLabel}</p>
-              <p className="text-xs text-slate-300">{result.overallEvaluation.summary}</p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-6 py-4 text-center">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">総点数</p>
+                <p className="text-3xl font-bold text-sky-400">
+                  {document.totalScore.value}
+                  <span className="ml-1 text-base font-medium text-slate-500">
+                    /{document.totalScore.max}
+                  </span>
+                </p>
+              </div>
+
+              <div className="max-w-xs space-y-1 rounded-xl border border-slate-700 bg-slate-950/70 px-6 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">総評価</p>
+                <p className="text-sm font-semibold text-amber-300">
+                  {document.overallEvaluation.ratingLabel}
+                </p>
+                <p className="text-xs text-slate-300">{document.overallEvaluation.summary}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="space-y-6">
-        <h3 className="text-lg font-semibold text-slate-100">項目別評価</h3>
-        <div className="grid gap-4">
-          {result.sectionEvaluations.map((section) => (
-            <article
-              key={section.id}
-              className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/70 p-5"
-            >
-              <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold text-slate-100">項目別評価</h3>
+          <div className="grid gap-4">
+            {document.sectionEvaluations.map((section) => (
+              <article
+                key={section.id}
+                className="space-y-4 rounded-xl border border-slate-800 bg-slate-950/70 p-5"
+              >
+                <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h4 className="text-base font-semibold text-slate-100">{section.title}</h4>
                   <p className="text-sm text-slate-300">{section.summary}</p>
@@ -96,9 +124,9 @@ export function DesignReviewResult({ result }: DesignReviewResultProps) {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-slate-100">改善提案</h3>
         <div className="grid gap-3">
-          {result.improvementSuggestions.map((suggestion) => (
+          {document.improvementSuggestions.map((suggestion) => (
             <article
-              key={suggestion.title}
+              key={`${document.id}-${suggestion.title}`}
               className="space-y-2 rounded-xl border border-slate-800 bg-slate-950/70 p-5"
             >
               <h4 className="text-base font-semibold text-slate-200">
@@ -109,6 +137,18 @@ export function DesignReviewResult({ result }: DesignReviewResultProps) {
           ))}
         </div>
       </div>
-    </section>
+      </section>
+
+      {document.childDocuments.length > 0 ? (
+        <div
+          className="space-y-8 border-l border-slate-800"
+          style={{ paddingLeft: `${Math.min(depth + 1, 4) * 1.5}rem` }}
+        >
+          {document.childDocuments.map((child) => (
+            <DocumentReviewPanel key={child.id} document={child} depth={depth + 1} />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
