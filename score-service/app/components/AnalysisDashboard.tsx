@@ -78,7 +78,10 @@ export function AnalysisDashboard() {
           </h1>
         </header>
 
-        <ConfigurationForm onValuesChange={handleConfigurationChange} />
+        <ConfigurationForm
+          onValuesChange={handleConfigurationChange}
+          initialValues={configurationValues}
+        />
 
         <footer className="text-center text-xs text-slate-500 sm:text-left">
           入力した情報はこのページ内でのみ保持され、外部へ送信されません。

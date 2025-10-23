@@ -268,6 +268,6 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
 function areConfigurationValuesEqual(
   a: Record<ConfigurationFieldId, string>,
   b: Record<ConfigurationFieldId, string>,
-) : boolean {
+): boolean {
   return FIELD_DEFINITIONS.every((field) => a[field.id] === b[field.id]);
 }
