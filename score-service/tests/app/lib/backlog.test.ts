@@ -5,6 +5,7 @@ import { BacklogClient } from "@/app/lib/backlog";
 describe("BacklogClient", () => {
   const baseUrl = "https://example.backlog.com";
   const apiKey = "dummy-key";
+  const projectIdOrKey = "PRJ";
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -30,7 +31,7 @@ describe("BacklogClient", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const client = new BacklogClient({ baseUrl, apiKey });
+    const client = new BacklogClient({ baseUrl, apiKey, projectIdOrKey });
     const tree = await client.fetchDocumentTree(1);
 
     expect(tree.content).toBe("<p>HTML コンテンツ</p>");
@@ -56,7 +57,7 @@ describe("BacklogClient", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const client = new BacklogClient({ baseUrl, apiKey });
+    const client = new BacklogClient({ baseUrl, apiKey, projectIdOrKey });
 
     await expect(client.fetchDocumentTree(1)).rejects.toThrow(
       "Backlog document 1 did not contain content",
@@ -89,13 +90,13 @@ describe("BacklogClient", () => {
 
     vi.stubGlobal("fetch", fetchMock);
 
-    const client = new BacklogClient({ baseUrl, apiKey });
+    const client = new BacklogClient({ baseUrl, apiKey, projectIdOrKey });
     const tree = await client.fetchDocumentTree(1);
 
     expect(tree.content).toBe("<p>本文</p>");
     const secondCallUrl = fetchMock.mock.calls[1]?.[0];
     expect(String(secondCallUrl)).toBe(
-      "https://example.backlog.com/api/v2/documents/1/content?apiKey=dummy-key",
+      "https://example.backlog.com/api/v2/documents/1/content?apiKey=dummy-key&projectIdOrKey=PRJ",
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });

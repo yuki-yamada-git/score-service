@@ -11,6 +11,11 @@ export type BacklogClientOptions = {
   baseUrl: string;
   /** Backlog の個人 API キー。 */
   apiKey: string;
+  /**
+   * Backlog のプロジェクト識別子。`projectIdOrKey` としてクエリに付与される。
+   * 例: "PRJ" や "123"
+   */
+  projectIdOrKey?: string;
 };
 
 /**
@@ -118,8 +123,9 @@ export type FetchBacklogDocumentTreeOptions = {
 export class BacklogClient {
   private readonly baseApiUrl: URL;
   private readonly apiKey: string;
+  private readonly projectIdOrKey?: string;
 
-  constructor({ baseUrl, apiKey }: BacklogClientOptions) {
+  constructor({ baseUrl, apiKey, projectIdOrKey }: BacklogClientOptions) {
     if (!baseUrl) {
       throw new Error("Backlog baseUrl is required");
     }
@@ -131,6 +137,7 @@ export class BacklogClient {
     const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
     this.baseApiUrl = new URL("api/v2/", normalizedBase);
     this.apiKey = apiKey;
+    this.projectIdOrKey = projectIdOrKey?.trim() || undefined;
   }
 
   /**
@@ -250,6 +257,9 @@ export class BacklogClient {
   private async request<T>(path: string): Promise<T> {
     const url = new URL(path.replace(/^\//, ""), this.baseApiUrl);
     url.searchParams.set("apiKey", this.apiKey);
+    if (this.projectIdOrKey) {
+      url.searchParams.set("projectIdOrKey", this.projectIdOrKey);
+    }
 
     let response: Response;
     try {
@@ -284,6 +294,7 @@ export async function fetchBacklogDocumentTree(
   const client = new BacklogClient({
     baseUrl: options.baseUrl,
     apiKey: options.apiKey,
+    projectIdOrKey: options.projectIdOrKey,
   });
 
   return client.fetchDocumentTree(options.documentId, options.treeOptions);

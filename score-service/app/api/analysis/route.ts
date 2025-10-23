@@ -63,6 +63,7 @@ export async function POST(request: Request): Promise<Response> {
     documentTree = await fetchBacklogDocumentTree({
       baseUrl: backlogBaseUrl,
       apiKey: backlogApiKey,
+      projectIdOrKey: projectId,
       documentId,
     });
   } catch (error) {
