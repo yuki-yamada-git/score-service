@@ -169,8 +169,10 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
 
       <form className="grid gap-6" onSubmit={(event) => event.preventDefault()}>
         {FIELD_DEFINITIONS.map((field) => (
-          <label key={field.id} className="group grid gap-2">
-            <span className="text-sm font-medium text-slate-200">{field.label}</span>
+          <div key={field.id} className="group grid gap-2">
+            <label htmlFor={field.id} className="text-sm font-medium text-slate-200">
+              {field.label}
+            </label>
             <input
               id={field.id}
               autoComplete={field.autoComplete}
@@ -183,7 +185,7 @@ export function ConfigurationForm({ onValuesChange, initialValues }: Configurati
             {field.description ? (
               <span className="text-xs text-slate-400">{field.description}</span>
             ) : null}
-          </label>
+          </div>
         ))}
 
         <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
