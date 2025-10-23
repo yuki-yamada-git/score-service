@@ -96,7 +96,7 @@ describe("BacklogClient", () => {
     expect(tree.content).toBe("<p>本文</p>");
     const secondCallUrl = fetchMock.mock.calls[1]?.[0];
     expect(String(secondCallUrl)).toBe(
-      "https://example.backlog.com/api/v2/documents/1/content?apiKey=dummy-key&projectIdOrKey=PRJ",
+      "https://example.backlog.com/api/v2/projects/PRJ/documents/1/content?apiKey=dummy-key",
     );
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });

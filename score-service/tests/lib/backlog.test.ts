@@ -11,21 +11,33 @@ describe("BacklogClient", () => {
     vi.unstubAllGlobals();
   });
 
-  it("requires baseUrl and apiKey", () => {
-    expect(() => new BacklogClient({ baseUrl: "", apiKey: "key" })).toThrow(
-      "Backlog baseUrl is required",
-    );
+  it("requires baseUrl, apiKey, and projectIdOrKey", () => {
+    expect(() =>
+      new BacklogClient({ baseUrl: "", apiKey: "key", projectIdOrKey: "PRJ" }),
+    ).toThrow("Backlog baseUrl is required");
 
-    expect(() => new BacklogClient({ baseUrl: "https://example", apiKey: "" })).toThrow(
-      "Backlog API key is required",
-    );
+    expect(() =>
+      new BacklogClient({
+        baseUrl: "https://example",
+        apiKey: "",
+        projectIdOrKey: "PRJ",
+      }),
+    ).toThrow("Backlog API key is required");
+
+    expect(() =>
+      new BacklogClient({
+        baseUrl: "https://example",
+        apiKey: "key",
+        projectIdOrKey: "",
+      }),
+    ).toThrow("Backlog projectIdOrKey is required");
   });
 
   it("fetches document tree recursively", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
 
-      if (url.pathname === "/api/v2/documents/1") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/1") {
         return createJsonResponse({
           id: 1,
           projectId: 99,
@@ -34,14 +46,14 @@ describe("BacklogClient", () => {
         });
       }
 
-      if (url.pathname === "/api/v2/documents/1/children") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/1/children") {
         return createJsonResponse([
           { id: 2, name: "Child", hasChildren: true },
           { id: 3, name: "Leaf", hasChildren: false },
         ]);
       }
 
-      if (url.pathname === "/api/v2/documents/2") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/2") {
         return createJsonResponse({
           id: 2,
           projectId: 99,
@@ -50,13 +62,13 @@ describe("BacklogClient", () => {
         });
       }
 
-      if (url.pathname === "/api/v2/documents/2/children") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/2/children") {
         return createJsonResponse([
           { id: 4, name: "Grand child", hasChildren: false },
         ]);
       }
 
-      if (url.pathname === "/api/v2/documents/3") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/3") {
         return createJsonResponse({
           id: 3,
           projectId: 99,
@@ -65,11 +77,11 @@ describe("BacklogClient", () => {
         });
       }
 
-      if (url.pathname === "/api/v2/documents/3/children") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/3/children") {
         throw new Error("Leaf children should not be fetched when hasChildren is false");
       }
 
-      if (url.pathname === "/api/v2/documents/4") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/4") {
         return createJsonResponse({
           id: 4,
           projectId: 99,
@@ -78,7 +90,7 @@ describe("BacklogClient", () => {
         });
       }
 
-      if (url.pathname === "/api/v2/documents/4/children") {
+      if (url.pathname === "/api/v2/projects/PRJ/documents/4/children") {
         throw new Error("Leaf children should not be fetched when hasChildren is false");
       }
 
@@ -135,17 +147,15 @@ describe("BacklogClient", () => {
     expect(
       requestedUrls.some(
         (url) =>
-          url.pathname === "/api/v2/documents/1" &&
-          url.searchParams.get("apiKey") === "secret" &&
-          url.searchParams.get("projectIdOrKey") === "PRJ",
+          url.pathname === "/api/v2/projects/PRJ/documents/1" &&
+          url.searchParams.get("apiKey") === "secret",
       ),
     ).toBe(true);
     expect(
       requestedUrls.some(
         (url) =>
-          url.pathname === "/api/v2/documents/1/children" &&
-          url.searchParams.get("apiKey") === "secret" &&
-          url.searchParams.get("projectIdOrKey") === "PRJ",
+          url.pathname === "/api/v2/projects/PRJ/documents/1/children" &&
+          url.searchParams.get("apiKey") === "secret",
       ),
     ).toBe(true);
   });
