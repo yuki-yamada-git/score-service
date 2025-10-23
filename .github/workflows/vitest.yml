@@ -23,7 +23,7 @@ jobs:
           cache-dependency-path: score-service/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run Vitest
         run: npm test
