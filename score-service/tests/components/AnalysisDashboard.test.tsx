@@ -40,6 +40,9 @@ describe("AnalysisDashboard", () => {
     const projectInput = screen.getByLabelText("Backlog の Project ID") as HTMLInputElement;
     fireEvent.change(projectInput, { target: { value: "123" } });
 
+    const designIdInput = screen.getByLabelText("設計書の ID") as HTMLInputElement;
+    fireEvent.change(designIdInput, { target: { value: "DESIGN-001" } });
+
     const startButton = screen.getByRole("button", { name: "分析開始" }) as HTMLButtonElement;
     fireEvent.click(startButton);
 
@@ -51,11 +54,16 @@ describe("AnalysisDashboard", () => {
 
     const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
     const requestBody = JSON.parse(requestInit.body as string) as {
-      backlog: { baseUrl?: string; projectId?: string };
+      backlog: {
+        baseUrl?: string;
+        projectId?: string;
+        designDocumentId?: string;
+      };
     };
 
     expect(requestBody.backlog.baseUrl).toBe("https://example.backlog.com");
     expect(requestBody.backlog.projectId).toBe("123");
+    expect(requestBody.backlog.designDocumentId).toBe("DESIGN-001");
 
     await waitFor(() => {
       expect(
@@ -79,6 +87,8 @@ describe("AnalysisDashboard", () => {
     render(<AnalysisDashboard />);
 
     const startButton = screen.getByRole("button", { name: "分析開始" }) as HTMLButtonElement;
+    const designIdInput = screen.getByLabelText("設計書の ID") as HTMLInputElement;
+    fireEvent.change(designIdInput, { target: { value: "DESIGN-002" } });
     fireEvent.click(startButton);
 
     await waitFor(() => {
@@ -93,5 +103,23 @@ describe("AnalysisDashboard", () => {
     expect(
       screen.queryByText(MOCK_DESIGN_REVIEW_RESULT.rootDocument.documentTitle),
     ).toBeNull();
+  });
+
+  it("shows a validation error when neither document ID is provided", async () => {
+    const fetchMock = vi.fn();
+
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    render(<AnalysisDashboard />);
+
+    const startButton = screen.getByRole("button", { name: "分析開始" }) as HTMLButtonElement;
+    fireEvent.click(startButton);
+
+    await waitFor(() => {
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "設計書 ID または要件定義書 ID のいずれかを入力してください。",
+      );
+    });
   });
 });

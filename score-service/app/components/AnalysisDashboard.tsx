@@ -13,6 +13,8 @@ import type { DesignReviewResult as DesignReviewResultType } from "@/app/lib/des
 type ConfigurationValues = Record<ConfigurationFieldId, string>;
 
 const GENERIC_ERROR_MESSAGE = "分析に失敗しました。時間を置いて再度お試しください。";
+const DOCUMENT_ID_REQUIRED_MESSAGE =
+  "設計書 ID または要件定義書 ID のいずれかを入力してください。";
 
 export function AnalysisDashboard() {
   const [configurationValues, setConfigurationValues] = useState<ConfigurationValues>({
@@ -31,28 +33,51 @@ export function AnalysisDashboard() {
       return;
     }
 
-    setErrorMessage(null);
-    setIsAnalyzing(true);
-
     const backlogProjectId = configurationValues.backlogProjectId.trim();
     const designDocumentId = configurationValues.designDocumentId.trim();
     const requirementsDocumentId =
       configurationValues.requirementsDocumentId.trim();
+    const hasDesignDocumentId = designDocumentId.length > 0;
+    const hasRequirementsDocumentId = requirementsDocumentId.length > 0;
+
+    setErrorMessage(null);
+
+    if (!hasDesignDocumentId && !hasRequirementsDocumentId) {
+      setErrorMessage(DOCUMENT_ID_REQUIRED_MESSAGE);
+      setReviewResult(null);
+      return;
+    }
+
+    setIsAnalyzing(true);
 
     try {
+      const backlogPayload: {
+        baseUrl: string;
+        projectId: string;
+        apiKey: string;
+        designDocumentId?: string;
+        requirementsDocumentId?: string;
+      } = {
+        baseUrl: configurationValues.backlogBaseUrl,
+        projectId: backlogProjectId,
+        apiKey: configurationValues.backlogApiKey,
+      };
+
+      if (hasDesignDocumentId) {
+        backlogPayload.designDocumentId = designDocumentId;
+      }
+
+      if (hasRequirementsDocumentId) {
+        backlogPayload.requirementsDocumentId = requirementsDocumentId;
+      }
+
       const response = await fetch("/api/analysis", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          backlog: {
-            baseUrl: configurationValues.backlogBaseUrl,
-            projectId: backlogProjectId,
-            designDocumentId,
-            requirementsDocumentId,
-            apiKey: configurationValues.backlogApiKey,
-          },
+          backlog: backlogPayload,
           openAi: {
             apiKey: configurationValues.openAiApiKey,
           },
