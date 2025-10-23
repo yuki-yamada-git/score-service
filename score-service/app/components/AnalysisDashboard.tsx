@@ -195,7 +195,7 @@ export function AnalysisDashboard() {
             <DesignReviewResult result={reviewResult} />
           ) : (
             <section className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/30 p-8 text-center text-sm text-slate-400">
-              ChatGPT へのレビュー依頼結果がここに表示されます。上部の設定を入力し「分析開始」を押すと、サンプルのレビュー結果が表示されます。
+              ChatGPT へのレビュー依頼結果がここに表示されます。
             </section>
           )}
         </div>
