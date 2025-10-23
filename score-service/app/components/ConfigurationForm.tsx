@@ -12,6 +12,11 @@ import {
 } from "@/app/lib/configuration-form";
 import { copyTextToClipboard } from "@/app/lib/copy-to-clipboard";
 
+type ConfigurationFormProps = {
+  value: Record<ConfigurationFieldId, string>;
+  onChange: (nextValues: Record<ConfigurationFieldId, string>) => void;
+};
+
 const IMPORT_PLACEHOLDER = `{
   "backlog": {
     ...
@@ -21,10 +26,7 @@ const IMPORT_PLACEHOLDER = `{
   }
 }`;
 
-export function ConfigurationForm() {
-  const [values, setValues] = useState<Record<ConfigurationFieldId, string>>({
-    ...INITIAL_VALUES,
-  });
+export function ConfigurationForm({ value, onChange }: ConfigurationFormProps) {
   const [hasCopied, setHasCopied] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
@@ -32,19 +34,19 @@ export function ConfigurationForm() {
   const importTextAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // フォームで管理している値からプレビュー用の JSON を生成する。
-  const preview = useMemo<PreviewState>(() => buildPreview(values), [values]);
+  const preview = useMemo<PreviewState>(() => buildPreview(value), [value]);
 
   // 各入力フィールドの変更を受け取り、対応する値を更新する。
   const handleChange = (fieldId: ConfigurationFieldId, nextValue: string) => {
-    setValues((current) => ({
-      ...current,
+    onChange({
+      ...value,
       [fieldId]: nextValue,
-    }));
+    });
   };
 
   // 入力値とコピー状態を初期化する。
   const handleReset = () => {
-    setValues({ ...INITIAL_VALUES });
+    onChange({ ...INITIAL_VALUES });
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -103,7 +105,7 @@ export function ConfigurationForm() {
       return;
     }
 
-    setValues(nextValues);
+    onChange(nextValues);
     setHasCopied(false);
     setImportError(null);
     setImportText("");
@@ -130,7 +132,7 @@ export function ConfigurationForm() {
               onChange={(event) => handleChange(field.id, event.target.value)}
               placeholder={field.placeholder}
               type={field.type ?? "text"}
-              value={values[field.id]}
+              value={value[field.id]}
             />
             {field.description ? (
               <span className="text-xs text-slate-400">{field.description}</span>
