@@ -179,7 +179,7 @@ export class BacklogClient {
   private async fetchDocument(documentId: string): Promise<BacklogDocument> {
     const response = await this.request<BacklogDocument>(`documents/${documentId}`);
 
-    if (!response.content) {
+    if (response.content === undefined || response.content === null) {
       throw new Error(`Backlog document ${documentId} did not contain content`);
     }
 

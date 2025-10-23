@@ -156,6 +156,38 @@ describe("BacklogClient", () => {
     );
   });
 
+  it("allows documents with empty string content", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = new URL(String(input));
+
+      if (url.pathname.endsWith("/documents/10")) {
+        return createJsonResponse({
+          id: 10,
+          projectId: 7,
+          name: "Empty",
+          content: "",
+        });
+      }
+
+      if (url.pathname.endsWith("/documents/10/children")) {
+        return createJsonResponse([]);
+      }
+
+      throw new Error("Unexpected request");
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new BacklogClient({
+      baseUrl: "https://example.backlog.com",
+      apiKey: "secret",
+    });
+
+    const document = await client.fetchDocumentTree(10);
+
+    expect(document.content).toBe("");
+  });
+
   it("supports the helper function", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo) => {
       const url = new URL(String(input));
