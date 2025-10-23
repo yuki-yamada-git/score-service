@@ -272,8 +272,13 @@ export class BacklogClient {
 
     if (!response.ok) {
       const statusText = response.statusText || "Unknown error";
+      const detail = await extractBacklogErrorDetail(response);
+      const statusMessage = detail
+        ? `${statusText} (${detail})`
+        : statusText;
+
       throw new Error(
-        `Backlog API request failed with status ${response.status}: ${statusText}`,
+        `Backlog API request failed with status ${response.status}: ${statusMessage}`,
       );
     }
 
@@ -298,6 +303,116 @@ export async function fetchBacklogDocumentTree(
   });
 
   return client.fetchDocumentTree(options.documentId, options.treeOptions);
+}
+
+async function extractBacklogErrorDetail(
+  response: Response,
+): Promise<string | undefined> {
+  let bodyText: string;
+
+  try {
+    bodyText = await response.text();
+  } catch {
+    return undefined;
+  }
+
+  const trimmedBody = bodyText.trim();
+  if (!trimmedBody) {
+    return undefined;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      const data = JSON.parse(trimmedBody);
+      const messages = extractErrorMessages(data);
+
+      if (messages.length > 0) {
+        return sanitizeErrorDetail(messages.join("; "));
+      }
+    } catch {
+      // JSON として扱えない場合はテキストにフォールバックする
+    }
+  }
+
+  return sanitizeErrorDetail(trimmedBody);
+}
+
+function extractErrorMessages(value: unknown): string[] {
+  const messages: string[] = [];
+  const seen = new Set<unknown>();
+
+  const visit = (node: unknown) => {
+    if (node === null || node === undefined) {
+      return;
+    }
+
+    if (typeof node === "string") {
+      const trimmed = node.trim();
+      if (trimmed) {
+        messages.push(trimmed);
+      }
+      return;
+    }
+
+    if (typeof node !== "object") {
+      return;
+    }
+
+    if (seen.has(node)) {
+      return;
+    }
+
+    seen.add(node);
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item);
+      }
+      return;
+    }
+
+    const record = node as Record<string, unknown>;
+    const candidateKeys = [
+      "message",
+      "error",
+      "detail",
+      "details",
+      "description",
+      "reason",
+    ];
+
+    for (const key of candidateKeys) {
+      const valueForKey = record[key];
+      if (typeof valueForKey === "string") {
+        const trimmed = valueForKey.trim();
+        if (trimmed) {
+          messages.push(trimmed);
+        }
+      }
+    }
+
+    const errorsField = record.errors;
+    if (Array.isArray(errorsField)) {
+      for (const item of errorsField) {
+        visit(item);
+      }
+    }
+
+    for (const nested of Object.values(record)) {
+      visit(nested);
+    }
+  };
+
+  visit(value);
+
+  const uniqueMessages = new Set(messages);
+  return Array.from(uniqueMessages);
+}
+
+function sanitizeErrorDetail(detail: string): string {
+  return detail.replace(/\s+/g, " ").trim();
 }
 
 function normalizeDocumentId(documentId: string | number): string {
