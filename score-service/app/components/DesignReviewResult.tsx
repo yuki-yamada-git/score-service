@@ -30,6 +30,11 @@ function DocumentReviewPanel({ document, isRoot = false, depth }: DocumentReview
     ? "text-2xl font-semibold text-slate-50 sm:text-3xl"
     : "text-xl font-semibold text-slate-50";
 
+  const breadcrumbLabels = document.breadcrumbs
+    .map((breadcrumb) => breadcrumb.label.trim())
+    .filter((label) => label.length > 0);
+  const documentTreeLocation = breadcrumbLabels.join(" / ");
+
   return (
     <div className="space-y-8">
       <section className={containerClassName}>
@@ -60,6 +65,9 @@ function DocumentReviewPanel({ document, isRoot = false, depth }: DocumentReview
                 {isRoot ? "全体レビュー" : "ドキュメントレビュー"}
               </p>
               <h2 className={titleClassName}>{document.documentTitle}</h2>
+              {documentTreeLocation ? (
+                <p className="text-xs text-slate-400">{documentTreeLocation}</p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
